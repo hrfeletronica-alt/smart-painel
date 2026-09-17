@@ -8,9 +8,11 @@
   <!-- Fontes Oficiais -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <!-- QRCode Library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <!-- MQTT Paho Client para Controle em Nuvem Global -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 
   <style>
     * {
@@ -661,65 +663,120 @@
     let brilhoAtivo = 0;
     const URL_CELULAR = "http://192.168.31.236:5000";
 
-    // Conexão WebSocket para sincronizar PC e Celular em tempo real
+    // CONFIGURAÇÃO MQTT EM NUVEM GLOBAL (Acesso de Qualquer Rede 4G/Wi-Fi)
+    const MQTT_BROKER = "broker.emqx.io";
+    const MQTT_PORT = 8084; // Porta WebSocket segura (WSS)
+    const TOPICO_COMANDO = "smarthelipontos/balizamento/comando";
+    const TOPICO_STATUS = "smarthelipontos/balizamento/status";
+    const CLIENT_ID = "web_client_" + Math.random().toString(16).substr(2, 8);
+
+    let mqttClient = null;
+
+    function conectarMQTT() {
+      try {
+        mqttClient = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, CLIENT_ID);
+
+        mqttClient.onConnectionLost = (responseObject) => {
+          console.warn("Conexão MQTT perdida:", responseObject.errorMessage);
+          setTimeout(conectarMQTT, 3000);
+        };
+
+        mqttClient.onMessageArrived = (message) => {
+          console.log("[MQTT RECEBIDO]:", message.destinationName, message.payloadString);
+          if (message.destinationName === TOPICO_STATUS || message.destinationName === TOPICO_COMANDO) {
+            const nivel = parseInt(message.payloadString, 10);
+            if (!isNaN(nivel)) {
+              brilhoAtivo = nivel;
+              atualizarPainel();
+            }
+          }
+        };
+
+        const options = {
+          useSSL: true,
+          timeout: 5,
+          onSuccess: () => {
+            console.log("Conectado ao Broker MQTT Global (broker.emqx.io)!");
+            mqttClient.subscribe(TOPICO_STATUS);
+            mqttClient.subscribe(TOPICO_COMANDO);
+          },
+          onFailure: (err) => {
+            console.error("Falha ao conectar no MQTT:", err);
+            setTimeout(conectarMQTT, 4000);
+          }
+        };
+
+        mqttClient.connect(options);
+      } catch (e) {
+        console.error("Erro MQTT:", e);
+      }
+    }
+
+    // Inicia conexão MQTT Global
+    conectarMQTT();
+
+    // Fallback local via WebSocket (quando estiver no PC local)
     let ws;
     function conectarWebSocket() {
-      const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host || 'localhost:5000';
-      ws = new WebSocket(`${protocolo}//${host}`);
+      try {
+        const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host || 'localhost:5000';
+        ws = new WebSocket(`${protocolo}//${host}`);
 
-      ws.onopen = () => {
-        console.log("Conectado ao servidor de sincronização em tempo real.");
-      };
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'SYNC_STATE') {
+              brilhoAtivo = data.brilho;
+              atualizarPainel();
+            }
+          } catch (e) {}
+        };
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'SYNC_STATE') {
-            brilhoAtivo = data.brilho;
-            atualizarPainel();
-          }
-        } catch (e) {
-          console.error("Erro ao ler sincronização:", e);
-        }
-      };
-
-      ws.onclose = () => {
-        console.warn("WebSocket desconectado. Tentando reconectar em 2s...");
-        setTimeout(conectarWebSocket, 2000);
-      };
+        ws.onclose = () => setTimeout(conectarWebSocket, 3000);
+      } catch (e) {}
     }
     conectarWebSocket();
 
-    // Acionamento com sincronização instantânea
+    // Acionamento com suporte a Nuvem MQTT e Local
     function alternarBrilho(nivel) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        // Envia ao servidor que repassa para PC e Celular simultaneamente
-        ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: nivel }));
-      } else {
-        // Fallback local se o socket estiver reconectando
-        if (brilhoAtivo === nivel) {
-          brilhoAtivo = 0;
-        } else {
-          brilhoAtivo = nivel;
-        }
-        atualizarPainel();
+      let novoNivel = (brilhoAtivo === nivel) ? 0 : nivel;
+      brilhoAtivo = novoNivel;
+      atualizarPainel();
+
+      // 1. Envia via MQTT Global para o ESP32-S3 em qualquer rede
+      if (mqttClient && mqttClient.isConnected()) {
+        const msg = new Paho.MQTT.Message(novoNivel.toString());
+        msg.destinationName = TOPICO_COMANDO;
+        msg.retained = true; // Mantém o estado para quando o ESP32 reiniciar
+        mqttClient.send(msg);
       }
-      enviarComandoEsp32(brilhoAtivo === nivel ? 0 : nivel);
+
+      // 2. Sincroniza via WebSocket local
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: nivel }));
+      }
+
+      // 3. Fallback HTTP direto se estiver na rede do Access Point
+      fetch(`http://192.168.4.1/setGroup?btn=${novoNivel}`, { mode: 'no-cors' }).catch(() => {});
     }
 
     function desligarBalizamento() {
+      brilhoAtivo = 0;
+      atualizarPainel();
+
+      if (mqttClient && mqttClient.isConnected()) {
+        const msg = new Paho.MQTT.Message("0");
+        msg.destinationName = TOPICO_COMANDO;
+        msg.retained = true;
+        mqttClient.send(msg);
+      }
+
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: 0 }));
-      } else {
-        brilhoAtivo = 0;
-        atualizarPainel();
       }
-      enviarComandoEsp32(0);
-    }
 
-    function enviarComandoEsp32(btnNum) {
-      fetch(`http://192.168.4.1/setGroup?btn=${btnNum}`, { mode: 'no-cors' }).catch(() => {});
+      fetch(`http://192.168.4.1/setGroup?btn=0`, { mode: 'no-cors' }).catch(() => {});
     }
 
     function atualizarPainel() {
@@ -741,11 +798,11 @@
 
       if (brilhoAtivo === 0) {
         dot.className = 'status-badge-dot';
-        text.innerText = 'Balizamento: DESLIGADO';
+        text.innerText = 'Balizamento: DESLIGADO (Nuvem MQTT)';
       } else {
         dot.className = 'status-badge-dot on';
         const niveis = ["", "Nível 1 (30%)", "Nível 2 (70%)", "Nível 3 (100%)"];
-        text.innerText = `Balizamento: ATIVO • ${niveis[brilhoAtivo]}`;
+        text.innerText = `Balizamento: ATIVO • ${niveis[brilhoAtivo]} (Nuvem MQTT)`;
       }
     }
 
