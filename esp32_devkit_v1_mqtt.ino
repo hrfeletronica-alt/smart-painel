@@ -51,10 +51,18 @@ String TOPICO_COMANDO      = "smarthelipontos/" + String(HELIPONTO_ID) + "/baliz
 String TOPICO_STATUS       = "smarthelipontos/" + String(HELIPONTO_ID) + "/balizamento/status";
 
 // ============================================================================
-// 3. PINAGEM DOS 6 RELÉS E DOS 3 BOTÕES FÍSICOS (ESP32 DevKit V1)
+// 3. PINAGEM DOS RELÉS E DOS 3 BOTÕES FÍSICOS (ESP32 DevKit V1)
 // ============================================================================
+// Relés 1, 2 e 3 ATIVOS:
+//   - Brilho 1 (30%):  Relé 1 (GPIO 18)
+//   - Brilho 2 (70%):  Relé 2 (GPIO 19)
+//   - Brilho 3 (100%): Relé 3 (GPIO 21)
+// Relés 4, 5 e 6 DESABILITADOS (GPIOs 22, 25, 26 mantidos desligados)
 const uint8_t NUM_RELES = 6;
 const uint8_t PINOS_RELE[NUM_RELES] = {18, 19, 21, 22, 25, 26};
+
+// Mapeamento de 1 relé por estágio:
+const uint8_t RELE_ESTAGIO[3] = {0, 1, 2}; // Estágio 1 -> Relé 1, Estágio 2 -> Relé 2, Estágio 3 -> Relé 3
 
 // Pinos dos 3 Push Buttons
 const uint8_t NUM_BOTOES = 3;
@@ -63,13 +71,6 @@ const uint8_t PINOS_BOTAO[NUM_BOTOES] = {32, 33, 27};
 // Lógica de relé: Active LOW (LOW liga, HIGH desliga)
 #define RELE_LIGADO    LOW
 #define RELE_DESLIGADO HIGH
-
-// Agrupamento dos 3 estágios (2 relés por estágio)
-const uint8_t ESTAGIOS[3][2] = {
-  {0, 1}, // Estágio 1 (30%):  Relés 1 (GPIO 18) e 2 (GPIO 19)
-  {2, 3}, // Estágio 2 (70%):  Relés 3 (GPIO 21) e 4 (GPIO 22)
-  {4, 5}  // Estágio 3 (100%): Relés 5 (GPIO 25) e 6 (GPIO 26)
-};
 
 int brilhoAtual = 0; // 0 = Desligado, 1 = 30%, 2 = 70%, 3 = 100%
 
@@ -81,31 +82,30 @@ const unsigned long DELAY_DEBOUNCE = 50; // 50 milissegundos para filtrar ruído
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 
-// Desliga todos os 6 relés imediatamente
+// Desliga todos os relés imediatamente
 void desligarTodosReles() {
   for (int i = 0; i < NUM_RELES; i++) {
     digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
   }
 }
 
-// Aplica o nível de brilho com intertravamento
+// Aplica o nível de brilho com intertravamento (1 relé ativo por vez)
 void aplicarNivelBrilho(int nivel) {
   if (nivel < 1 || nivel > 3) {
     desligarTodosReles();
     brilhoAtual = 0;
-    Serial.println("[STATUS] Balizamento DESLIGADO.");
+    Serial.println("[STATUS] Balizamento DESLIGADO (Todos os reles off).");
   } else {
     // Intertravamento: desliga todos antes de ligar o novo estágio
     desligarTodosReles();
 
-    uint8_t r1 = ESTAGIOS[nivel - 1][0];
-    uint8_t r2 = ESTAGIOS[nivel - 1][1];
-    digitalWrite(PINOS_RELE[r1], RELE_LIGADO);
-    digitalWrite(PINOS_RELE[r2], RELE_LIGADO);
+    // Aciona apenas o relé correspondente ao nível (Relés 4, 5 e 6 permanecem desabilitados)
+    uint8_t releIndice = RELE_ESTAGIO[nivel - 1];
+    digitalWrite(PINOS_RELE[releIndice], RELE_LIGADO);
 
     brilhoAtual = nivel;
-    Serial.printf("[STATUS] Estágio %d ATIVADO! Relé %d (GPIO %d) e Relé %d (GPIO %d) LIGADOS.\n",
-                  nivel, r1 + 1, PINOS_RELE[r1], r2 + 1, PINOS_RELE[r2]);
+    Serial.printf("[STATUS] Estágio %d ATIVADO! Apenas Relé %d (GPIO %d) LIGADO. (Relés 4, 5 e 6 desabilitados)\n",
+                  nivel, releIndice + 1, PINOS_RELE[releIndice]);
   }
 
   // Notifica o novo estado para a nuvem MQTT (atualiza celular e PC na mesma hora)
