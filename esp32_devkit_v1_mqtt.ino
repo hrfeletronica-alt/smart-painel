@@ -2,33 +2,34 @@
  * ============================================================================
  * PROJETO: SMART HELIPONTOS - CONTROLE DE BALIZAMENTO NOTURNO
  * HARDWARE: ESP32 DevKit V1 (ESP-WROOM-32 de 30 ou 38 pinos)
- * COMUNICAÇÃO: Nuvem MQTT Global (Acionamento de qualquer rede / 4G / Wi-Fi)
+ * RECURSOS:
+ *  1. Controle via Nuvem MQTT (App Web / Celular 4G e PC)
+ *  2. Controle Físico Local com 3 Push Buttons (Botoeiras no Painel)
  * ============================================================================
  * 
  * MAPA DE PINOS SEGUROS NO ESP32 DevKit V1:
- * - Pinos livres de strapping e sem pulsos no boot (evita disparo indesejado dos relés)
  * 
- *   [ESTÁGIO 1 - 30%]
- *   - Relé 1: GPIO 18
- *   - Relé 2: GPIO 19
+ * [SAÍDAS PARA OS 6 RELÉS]
+ *   - Estágio 1 (30%):  Relé 1 (GPIO 18) e Relé 2 (GPIO 19)
+ *   - Estágio 2 (70%):  Relé 3 (GPIO 21) e Relé 4 (GPIO 22)
+ *   - Estágio 3 (100%): Relé 5 (GPIO 25) e Relé 6 (GPIO 26)
  * 
- *   [ESTÁGIO 2 - 70%]
- *   - Relé 3: GPIO 21
- *   - Relé 4: GPIO 22
- * 
- *   [ESTÁGIO 3 - 100%]
- *   - Relé 5: GPIO 25
- *   - Relé 6: GPIO 26
+ * [ENTRADAS PARA OS 3 PUSH BUTTONS (BOTOEIRAS)]
+ *   - Usando PULL-UP interno (Ligue o botão entre o pino do ESP32 e o GND):
+ *   - Botão Físico 1 (Brilho 1): GPIO 32 ➔ GND
+ *   - Botão Físico 2 (Brilho 2): GPIO 33 ➔ GND
+ *   - Botão Físico 3 (Brilho 3): GPIO 27 ➔ GND
  * 
  * REGRA DO SISTEMA:
- * - Cada estágio aciona estritamente 2 relés simultâneos.
- * - Ao acionar um estágio, os outros são imediatamente ANULADOS (máximo 2 relés ativos).
- * - Clicar no mesmo estágio desliga o balizamento.
+ * - O botão físico e o aplicativo trabalham em conjunto e sincronizados.
+ * - Pressionar um botão físico comuta o estágio e avisa o celular na mesma hora via MQTT.
+ * - Intertravamento rígido: Nunca mais de 2 relés ligados simultaneamente.
+ * - Clicar no mesmo botão desliga o balizamento (Toggle).
  */
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <PubSubClient.h> // Instale a biblioteca "PubSubClient" de Nick O'Leary na Arduino IDE
+#include <PubSubClient.h> // Instale a biblioteca "PubSubClient" pela Arduino IDE
 
 // ============================================================================
 // 1. CONFIGURAÇÃO DE WI-FI DO HELIPONTO
@@ -45,17 +46,20 @@ const char* TOPICO_COMANDO = "smarthelipontos/balizamento/comando";
 const char* TOPICO_STATUS  = "smarthelipontos/balizamento/status";
 
 // ============================================================================
-// 3. DEFINIÇÃO DOS PINOS DO ESP32 DEVKIT V1
+// 3. PINAGEM DOS 6 RELÉS E DOS 3 BOTÕES FÍSICOS (ESP32 DevKit V1)
 // ============================================================================
 const uint8_t NUM_RELES = 6;
 const uint8_t PINOS_RELE[NUM_RELES] = {18, 19, 21, 22, 25, 26};
 
-// A maioria dos módulos de relé comerciais trabalha em Lógica Invertida (Active LOW)
-// Se os seus relés forem Active HIGH, inverta as definições abaixo:
+// Pinos dos 3 Push Buttons
+const uint8_t NUM_BOTOES = 3;
+const uint8_t PINOS_BOTAO[NUM_BOTOES] = {32, 33, 27};
+
+// Lógica de relé: Active LOW (LOW liga, HIGH desliga)
 #define RELE_LIGADO    LOW
 #define RELE_DESLIGADO HIGH
 
-// Agrupamento dos 3 estágios de brilho (2 relés por estágio)
+// Agrupamento dos 3 estágios (2 relés por estágio)
 const uint8_t ESTAGIOS[3][2] = {
   {0, 1}, // Estágio 1 (30%):  Relés 1 (GPIO 18) e 2 (GPIO 19)
   {2, 3}, // Estágio 2 (70%):  Relés 3 (GPIO 21) e 4 (GPIO 22)
@@ -64,44 +68,59 @@ const uint8_t ESTAGIOS[3][2] = {
 
 int brilhoAtual = 0; // 0 = Desligado, 1 = 30%, 2 = 70%, 3 = 100%
 
+// Variáveis para Debounce dos botões físicos
+bool ultimoEstadoBotao[NUM_BOTOES] = {HIGH, HIGH, HIGH};
+unsigned long ultimoTempoDebounce[NUM_BOTOES] = {0, 0, 0};
+const unsigned long DELAY_DEBOUNCE = 50; // 50 milissegundos para filtrar ruído mecânico
+
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 
-// Função que garante o desligamento físico de todos os 6 relés
+// Desliga todos os 6 relés imediatamente
 void desligarTodosReles() {
   for (int i = 0; i < NUM_RELES; i++) {
     digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
   }
 }
 
-// Lógica estrita de comutação com intertravamento
+// Aplica o nível de brilho com intertravamento
 void aplicarNivelBrilho(int nivel) {
   if (nivel < 1 || nivel > 3) {
     desligarTodosReles();
     brilhoAtual = 0;
-    Serial.println("[ESP32 DevKit V1] Balizamento DESLIGADO.");
+    Serial.println("[STATUS] Balizamento DESLIGADO.");
   } else {
-    // 1º Garante desligar todos os outros antes de ligar o novo (sem sobreposição)
+    // Intertravamento: desliga todos antes de ligar o novo estágio
     desligarTodosReles();
 
-    // 2º Liga apenas os 2 relés correspondentes ao estágio selecionado
     uint8_t r1 = ESTAGIOS[nivel - 1][0];
     uint8_t r2 = ESTAGIOS[nivel - 1][1];
     digitalWrite(PINOS_RELE[r1], RELE_LIGADO);
     digitalWrite(PINOS_RELE[r2], RELE_LIGADO);
 
     brilhoAtual = nivel;
-    Serial.printf("[ESP32 DevKit V1] Estágio %d ATIVADO! Relé %d (GPIO %d) e Relé %d (GPIO %d) LIGADOS.\n",
+    Serial.printf("[STATUS] Estágio %d ATIVADO! Relé %d (GPIO %d) e Relé %d (GPIO %d) LIGADOS.\n",
                   nivel, r1 + 1, PINOS_RELE[r1], r2 + 1, PINOS_RELE[r2]);
   }
 
-  // Notifica o novo estado para a nuvem (para sincronizar celulares e PCs)
-  char payload[4];
-  sprintf(payload, "%d", brilhoAtual);
-  mqttClient.publish(TOPICO_STATUS, payload, true);
+  // Notifica o novo estado para a nuvem MQTT (atualiza celular e PC na mesma hora)
+  if (mqttClient.connected()) {
+    char payload[4];
+    sprintf(payload, "%d", brilhoAtual);
+    mqttClient.publish(TOPICO_STATUS, payload, true);
+  }
 }
 
-// Callback acionado instantaneamente quando chega comando do painel web
+// Alterna o brilho (se já estiver ativo, desliga)
+void alternarBrilho(int nivel) {
+  if (brilhoAtual == nivel) {
+    aplicarNivelBrilho(0); // Desliga (Toggle)
+  } else {
+    aplicarNivelBrilho(nivel);
+  }
+}
+
+// Trata os comandos recebidos pela internet (MQTT)
 void callbackMQTT(char* topic, byte* message, unsigned int length) {
   String msg = "";
   for (unsigned int i = 0; i < length; i++) {
@@ -113,6 +132,33 @@ void callbackMQTT(char* topic, byte* message, unsigned int length) {
   if (String(topic) == TOPICO_COMANDO) {
     int nivel = msg.toInt();
     aplicarNivelBrilho(nivel);
+  }
+}
+
+// Leitura contínua dos 3 botões físicos no painel com debounce
+void verificarBotoesFisicos() {
+  for (int i = 0; i < NUM_BOTOES; i++) {
+    int leitura = digitalRead(PINOS_BOTAO[i]);
+
+    // Detecta transição de solto (HIGH) para pressionado (LOW)
+    if (leitura != ultimoEstadoBotao[i]) {
+      ultimoTempoDebounce[i] = millis();
+    }
+
+    if ((millis() - ultimoTempoDebounce[i]) > DELAY_DEBOUNCE) {
+      // Se o botão está realmente pressionado (LOW com PULL-UP)
+      static bool estadoProcessado[NUM_BOTOES] = {false, false, false};
+
+      if (leitura == LOW && !estadoProcessado[i]) {
+        estadoProcessado[i] = true;
+        Serial.printf("\n[BOTÃO FÍSICO %d PRESSIONADO (GPIO %d)]\n", i + 1, PINOS_BOTAO[i]);
+        alternarBrilho(i + 1); // 1 = Brilho 1, 2 = Brilho 2, 3 = Brilho 3
+      } else if (leitura == HIGH) {
+        estadoProcessado[i] = false;
+      }
+    }
+
+    ultimoEstadoBotao[i] = leitura;
   }
 }
 
@@ -137,7 +183,7 @@ void reconectarWiFi() {
     Serial.print("[IP Local]: ");
     Serial.println(WiFi.localIP());
   } else {
-    Serial.println("\n[Wi-Fi] Falha ao conectar. Verifique nome e senha.");
+    Serial.println("\n[Wi-Fi] Falha ao conectar.");
   }
 }
 
@@ -148,14 +194,12 @@ void reconectarMQTT() {
 
     if (mqttClient.connect(clientId.c_str())) {
       Serial.println("CONECTADO A NUVEM!");
-      // Assina o tópico para escutar os comandos do celular e do PC
       mqttClient.subscribe(TOPICO_COMANDO);
-      // Publica o estado atual
       char payload[4];
       sprintf(payload, "%d", brilhoAtual);
       mqttClient.publish(TOPICO_STATUS, payload, true);
     } else {
-      Serial.printf("Falha (código rc=%d). Tentando novamente em 3s...\n", mqttClient.state());
+      Serial.printf("Falha (rc=%d). Tentando em 3s...\n", mqttClient.state());
       delay(3000);
     }
   }
@@ -164,14 +208,21 @@ void reconectarMQTT() {
 void setup() {
   Serial.begin(115200);
 
-  // Inicializa os pinos de relé garantindo que iniciem todos DESLIGADOS
+  // 1. Inicializa os pinos de relé (Saídas)
   for (int i = 0; i < NUM_RELES; i++) {
     pinMode(PINOS_RELE[i], OUTPUT);
     digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
   }
 
+  // 2. Inicializa os 3 Push Buttons com PULL-UP interno (Entradas)
+  for (int i = 0; i < NUM_BOTOES; i++) {
+    pinMode(PINOS_BOTAO[i], INPUT_PULLUP);
+  }
+
   Serial.println("\n==============================================");
   Serial.println("   SMART HELIPONTOS - ESP32 DevKit V1");
+  Serial.println("   Relés nos GPIOs 18, 19, 21, 22, 25, 26");
+  Serial.println("   Botoeiras nos GPIOs 32, 33, 27 (GND)");
   Serial.println("==============================================");
 
   reconectarWiFi();
@@ -181,6 +232,10 @@ void setup() {
 }
 
 void loop() {
+  // 1. Monitora os botões físicos continuamente com debounce
+  verificarBotoesFisicos();
+
+  // 2. Mantém a conexão Wi-Fi e MQTT ativa
   if (WiFi.status() != WL_CONNECTED) {
     reconectarWiFi();
   }

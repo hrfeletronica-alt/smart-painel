@@ -172,8 +172,51 @@ t1.setStyle(TableStyle([
 elements.append(t1)
 elements.append(Spacer(1, 12))
 
-# 2. Alimentação e Aterramento
-elements.append(Paragraph("2. ESQUEMA DE ALIMENTAÇÃO E ISOLAMENTO (CRÍTICO)", h2_style))
+# 2. Tabela dos 3 Botões Físicos (Push Buttons / Botoeiras)
+elements.append(Paragraph("2. TABELA DOS 3 BOTÕES FÍSICOS (BOTOEIRAS DO PAINEL)", h2_style))
+
+data_botoes = [
+    [
+        Paragraph("BOTÃO FÍSICO", table_header_style),
+        Paragraph("PINO ESP32", table_header_style),
+        Paragraph("OUTRO TERMINAL DO BOTÃO", table_header_style),
+        Paragraph("FUNÇÃO / AÇÃO", table_header_style),
+    ],
+    [
+        Paragraph("<b>BOTAO 1</b><br/>(Push Button)", table_cell_bold),
+        Paragraph("<b>GPIO 32</b> (D32)", table_cell_bold),
+        Paragraph("GND (Terra)", table_cell_center),
+        Paragraph("Aciona / Desliga <b>Brilho 1 (30%)</b> • Relés 1 e 2", table_cell_left),
+    ],
+    [
+        Paragraph("<b>BOTAO 2</b><br/>(Push Button)", table_cell_bold),
+        Paragraph("<b>GPIO 33</b> (D33)", table_cell_bold),
+        Paragraph("GND (Terra)", table_cell_center),
+        Paragraph("Aciona / Desliga <b>Brilho 2 (70%)</b> • Relés 3 e 4", table_cell_left),
+    ],
+    [
+        Paragraph("<b>BOTAO 3</b><br/>(Push Button)", table_cell_bold),
+        Paragraph("<b>GPIO 27</b> (D27)", table_cell_bold),
+        Paragraph("GND (Terra)", table_cell_center),
+        Paragraph("Aciona / Desliga <b>Brilho 3 (100%)</b> • Relés 5 e 6", table_cell_left),
+    ],
+]
+
+t_btn = Table(data_botoes, colWidths=[100, 100, 130, 195])
+t_btn.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0284c7')),
+    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#ffffff'), colors.HexColor('#f8fafc')]),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    ('TOPPADDING', (0, 0), (-1, -1), 5),
+]))
+elements.append(t_btn)
+elements.append(Spacer(1, 10))
+
+# 3. Alimentação e Aterramento
+elements.append(Paragraph("3. ESQUEMA DE ALIMENTAÇÃO E ISOLAMENTO (CRÍTICO)", h2_style))
 
 data_alimentacao = [
     [
