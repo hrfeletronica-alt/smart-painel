@@ -674,7 +674,7 @@
 
     function conectarMQTT() {
       try {
-        mqttClient = new Paho.MQTT.Client(MQTT_BROKER, MQTT_PORT, CLIENT_ID);
+        mqttClient = new Paho.MQTT.Client(MQTT_BROKER, Number(MQTT_PORT), "/mqtt", CLIENT_ID);
 
         mqttClient.onConnectionLost = (responseObject) => {
           console.warn("Conexão MQTT perdida:", responseObject.errorMessage);
