@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Smart Helipontos • Balizamento Noturno & Controle de Brilho</title>
+  
+  <!-- Fontes Oficiais -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- QRCode Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #f8fafc;
+      background-color: #17457c;
+      background-image: 
+        linear-gradient(rgba(26, 62, 130, 0.55), rgba(23, 69, 124, 0.75)),
+        url('https://smarthelipontos.com.br/wp-content/uploads/2019/06/bg-header-smart-helipontos.jpg');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    /* Barra Superior com Logo Oficial (Fundo Branco como no site) */
+    header {
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .logo-img {
+      height: 46px;
+      width: auto;
+    }
+
+    .brand-text h1 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: #0f172a;
+      text-transform: uppercase;
+    }
+
+    .brand-text p {
+      font-size: 0.65rem;
+      color: #0284c7;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .top-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .mobile-right-btns {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-home-left {
+      margin-left: 1rem;
+      display: inline-flex;
+    }
+
+    @media (max-width: 600px) {
+      .header-home-left {
+        margin-left: auto;
+        padding: 0.4rem 0.65rem;
+        font-size: 0.72rem;
+      }
+      header {
+        padding: 0.75rem 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+      }
+
+      /* Linha 1: Marca com Logo centralizada/limpa */
+      .logo-container {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .logo-img {
+        height: 38px;
+        width: auto;
+      }
+
+      .brand-text h1 {
+        font-size: 0.95rem;
+        line-height: 1.2;
+      }
+
+      .brand-text p {
+        font-size: 0.62rem;
+        line-height: 1.2;
+      }
+
+      /* Esconde o Home de dentro da logo no mobile para ir para a barra de botões */
+      .header-home-left {
+        display: none;
+      }
+
+      /* Linha 2: Barra de Ações com os 2 botões (Telefone e QR) */
+      .top-right-actions {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .btn-whatsapp {
+        flex: 1;
+        justify-content: center;
+        padding: 0.45rem 0.6rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+
+      .btn-qr {
+        padding: 0.45rem 0.85rem;
+        font-size: 0.75rem;
+        justify-content: center;
+        white-space: nowrap;
+      }
+    }
+
+    /* Estilo Padronizado para os 3 Botões (Fundo igual ao QR) */
+    .btn-nav-home,
+    .btn-whatsapp,
+    .btn-qr {
+      background: #e0f2fe;
+      border: 1px solid #7dd3fc;
+      color: #0284c7;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-nav-home:hover,
+    .btn-whatsapp:hover,
+    .btn-qr:hover {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #ffffff;
+    }
+
+    .btn-whatsapp svg {
+      fill: currentColor;
+    }
+
+    .btn-qr:hover {
+      background: #0284c7;
+      color: white;
+    }
+
+    /* Conteúdo Principal Alinhado à Esquerda */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2.5rem 2rem 2.5rem 4rem;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        background-color: #1e5ba3;
+        background-image: 
+          linear-gradient(rgba(30, 85, 160, 0.45), rgba(25, 90, 170, 0.60)),
+          url('https://smarthelipontos.com.br/wp-content/uploads/2019/06/bg-header-smart-helipontos.jpg');
+      }
+
+      main {
+        padding: 1.25rem 0.85rem;
+        justify-content: center;
+      }
+
+      .software-window {
+        background: rgba(28, 72, 130, 0.90);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 25px rgba(56, 189, 248, 0.3);
+      }
+
+      .window-header {
+        background: rgba(22, 58, 105, 0.92);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .std-btn {
+        background: rgba(36, 85, 148, 0.85);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+      }
+
+      .std-btn.active {
+        background: #0284c7;
+        border-color: #7dd3fc;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+      }
+
+      .window-footer {
+        background: rgba(18, 50, 92, 0.85);
+        color: #e2e8f0;
+      }
+    }
+
+    /* Janela/Card Padrão de Software */
+    .software-window {
+      background: rgba(19, 47, 85, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 432px;
+      margin-left: 0;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(0, 122, 188, 0.25);
+      overflow: hidden;
+    }
+
+    /* Barra de Título do Software */
+    .window-header {
+      background: rgba(14, 38, 70, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .window-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .window-badge {
+      background: rgba(14, 165, 233, 0.2);
+      color: #38bdf8;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      letter-spacing: 0.05em;
+    }
+
+    .window-body {
+      padding: 1.5rem 1.25rem;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    /* Container dos Botões Padrão de Software */
+    .buttons-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* BOTÕES PADRÃO DE SOFTWARE (44px altura, alinhado, consistente) */
+    .std-btn {
+      height: 46px;
+      padding: 0 1rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .std-btn:hover {
+      background: #273549;
+      border-color: #475569;
+      color: #ffffff;
+    }
+
+    .std-btn:active {
+      transform: scale(0.99);
+    }
+
+    /* Estado LIGADO (Ativo com Cor Padrão de Automação) */
+    .std-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+    }
+
+    .btn-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn-icon {
+      font-size: 1.1rem;
+      width: 22px;
+      text-align: center;
+    }
+
+    .btn-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .btn-sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 500;
+      margin-left: 0.4rem;
+    }
+
+    .std-btn.active .btn-sub {
+      color: #e0f2fe;
+    }
+
+    /* Badge de Estado no botão (LIGA / DESLIGA) */
+    .btn-status-indicator {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #94a3b8;
+      letter-spacing: 0.05em;
+    }
+
+    .std-btn.active .btn-status-indicator {
+      background: #10b981;
+      color: #ffffff;
+    }
+
+    /* Botão de Desligar Geral */
+    .btn-power-off {
+      height: 42px;
+      padding: 0 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    .btn-power-off:hover {
+      background: #ef4444;
+      color: #ffffff;
+      border-color: #ef4444;
+    }
+
+    /* Barra de Status Inferior da Janela */
+    .window-footer {
+      background: rgba(10, 20, 35, 0.7);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 0.65rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .status-badge-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+      margin-right: 0.4rem;
+      transition: all 0.3s;
+    }
+
+    .status-badge-dot.on {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    /* Modal do QR Code */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #1e293b;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 1.8rem;
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.4rem;
+      color: #f8fafc;
+    }
+
+    .modal-card p {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+    }
+
+    .qr-box {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    .qr-url-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+      background: #0f172a;
+      padding: 0.45rem;
+      border-radius: 6px;
+      word-break: break-all;
+      margin-bottom: 1rem;
+    }
+
+    .btn-modal-close {
+      background: #334155;
+      color: white;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0.85rem;
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
+      background: rgba(10, 25, 47, 0.75);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topo com Marca Smart Helipontos -->
+  <header>
+    <div class="logo-container">
+      <img 
+        src="https://smarthelipontos.com.br/wp-content/uploads/2019/06/smart-helipontos-logo.png" 
+        alt="Smart Helipontos" 
+        class="logo-img" 
+      />
+      <div class="brand-text">
+        <h1>Smart Helipontos</h1>
+        <p>Balizamento Noturno & Iluminação Aeronáutica</p>
+      </div>
+
+      <!-- Botão Home ao lado do Logo -->
+      <a href="https://smarthelipontos.com.br/#inicio" target="_blank" rel="noopener noreferrer" class="btn-nav-home header-home-left" title="Ir para o site oficial Smart Helipontos">
+        <span>🏠</span> Home
+      </a>
+    </div>
+    
+    <div class="top-right-actions">
+      <!-- Telefone / WhatsApp -->
+      <a href="https://api.whatsapp.com/send?phone=5511989609190" target="_blank" rel="noopener noreferrer" class="btn-whatsapp" title="Falar no WhatsApp">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.584 1.771.895 2.796.896 3.184 0 5.77-2.586 5.771-5.767.002-3.183-2.583-5.782-5.772-5.782zm0-2.172c4.418 0 8 3.582 8 8 0 4.418-3.582 8-8 8-1.408 0-2.731-.365-3.882-1.006l-4.149 1.006 1.054-3.992c-.754-1.229-1.193-2.67-1.193-4.208 0-4.418 3.582-8 8-8z"/>
+        </svg>
+        <span>(11) 98960-9190</span>
+      </a>
+
+      <!-- Botão QR -->
+      <button class="btn-qr" onclick="abrirModalQr()" title="Abrir QR Code para Celular">
+        <span>📱</span> QR
+      </button>
+    </div>
+  </header>
+
+  <!-- Janela de Controle Padrão de Software -->
+  <main>
+    <div class="software-window">
+      
+      <!-- Cabeçalho da Janela -->
+      <div class="window-header">
+        <div class="window-title">
+          <span>⚡</span> Balizamento • Controle de Brilho
+        </div>
+        <span class="window-badge">SH 227</span>
+      </div>
+
+      <!-- Corpo com os Botões Padrão de Software -->
+      <div class="window-body">
+        
+        <span class="section-label">Estágios de Intensidade Luminosa:</span>
+
+        <div class="buttons-stack">
+          
+          <!-- BOTÃO BRILHO 1 -->
+          <button class="std-btn" id="btnBrilho1" onclick="alternarBrilho(1)">
+            <div class="btn-left">
+              <span class="btn-icon">🔅</span>
+              <span class="btn-title">Brilho 1</span>
+              <span class="btn-sub">(30%)</span>
+            </div>
+            <span class="btn-status-indicator" id="ind1">DESLIGADO</span>
+          </button>
+
+          <!-- BOTÃO BRILHO 2 -->
+          <button class="std-btn" id="btnBrilho2" onclick="alternarBrilho(2)">
+            <div class="btn-left">
+              <span class="btn-icon">🔆</span>
+              <span class="btn-title">Brilho 2</span>
+              <span class="btn-sub">(70%)</span>
+            </div>
+            <span class="btn-status-indicator" id="ind2">DESLIGADO</span>
+          </button>
+
+          <!-- BOTÃO BRILHO 3 -->
+          <button class="std-btn" id="btnBrilho3" onclick="alternarBrilho(3)">
+            <div class="btn-left">
+              <span class="btn-icon">⚡</span>
+              <span class="btn-title">Brilho 3</span>
+              <span class="btn-sub">(100%)</span>
+            </div>
+            <span class="btn-status-indicator" id="ind3">DESLIGADO</span>
+          </button>
+
+        </div>
+
+        <!-- Botão de Desligar Balizamento -->
+        <button class="btn-power-off" onclick="desligarBalizamento()">
+          <span>⏻</span> Desligar Balizamento
+        </button>
+
+      </div>
+
+      <!-- Rodapé com Status Atual do Sistema -->
+      <div class="window-footer">
+        <div>
+          <span class="status-badge-dot" id="statusDot"></span>
+          <span id="statusText">Balizamento: DESLIGADO</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal do QR Code para Celular -->
+  <div class="modal-overlay" id="qrModal" onclick="fecharModalQr(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>Acesse pelo Celular</h3>
+      <p>Aponte a câmera para abrir na mesma rede:</p>
+      <div class="qr-box">
+        <canvas id="qrCanvas"></canvas>
+      </div>
+      <div class="qr-url-text">http://192.168.31.236:5000</div>
+      <button class="btn-modal-close" onclick="fecharModalQr()">Fechar</button>
+    </div>
+  </div>
+
+  <footer>
+    Smart Helipontos • Tecnologia de Balizamento Homologado ANAC • Painel de Controle
+  </footer>
+
+  <script>
+    let brilhoAtivo = 0;
+    const URL_CELULAR = "http://192.168.31.236:5000";
+
+    // Conexão WebSocket para sincronizar PC e Celular em tempo real
+    let ws;
+    function conectarWebSocket() {
+      const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host || 'localhost:5000';
+      ws = new WebSocket(`${protocolo}//${host}`);
+
+      ws.onopen = () => {
+        console.log("Conectado ao servidor de sincronização em tempo real.");
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'SYNC_STATE') {
+            brilhoAtivo = data.brilho;
+            atualizarPainel();
+          }
+        } catch (e) {
+          console.error("Erro ao ler sincronização:", e);
+        }
+      };
+
+      ws.onclose = () => {
+        console.warn("WebSocket desconectado. Tentando reconectar em 2s...");
+        setTimeout(conectarWebSocket, 2000);
+      };
+    }
+    conectarWebSocket();
+
+    // Acionamento com sincronização instantânea
+    function alternarBrilho(nivel) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        // Envia ao servidor que repassa para PC e Celular simultaneamente
+        ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: nivel }));
+      } else {
+        // Fallback local se o socket estiver reconectando
+        if (brilhoAtivo === nivel) {
+          brilhoAtivo = 0;
+        } else {
+          brilhoAtivo = nivel;
+        }
+        atualizarPainel();
+      }
+      enviarComandoEsp32(brilhoAtivo === nivel ? 0 : nivel);
+    }
+
+    function desligarBalizamento() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: 0 }));
+      } else {
+        brilhoAtivo = 0;
+        atualizarPainel();
+      }
+      enviarComandoEsp32(0);
+    }
+
+    function enviarComandoEsp32(btnNum) {
+      fetch(`http://192.168.4.1/setGroup?btn=${btnNum}`, { mode: 'no-cors' }).catch(() => {});
+    }
+
+    function atualizarPainel() {
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`btnBrilho${i}`);
+        const ind = document.getElementById(`ind${i}`);
+
+        if (brilhoAtivo === i) {
+          btn.classList.add('active');
+          ind.innerText = 'LIGADO';
+        } else {
+          btn.classList.remove('active');
+          ind.innerText = 'DESLIGADO';
+        }
+      }
+
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+
+      if (brilhoAtivo === 0) {
+        dot.className = 'status-badge-dot';
+        text.innerText = 'Balizamento: DESLIGADO';
+      } else {
+        dot.className = 'status-badge-dot on';
+        const niveis = ["", "Nível 1 (30%)", "Nível 2 (70%)", "Nível 3 (100%)"];
+        text.innerText = `Balizamento: ATIVO • ${niveis[brilhoAtivo]}`;
+      }
+    }
+
+    function abrirModalQr() {
+      document.getElementById('qrModal').classList.add('open');
+      const canvas = document.getElementById('qrCanvas');
+      if (window.QRCode) {
+        QRCode.toCanvas(canvas, URL_CELULAR, { width: 170, margin: 1 }, function (error) {
+          if (error) console.error(error);
+        });
+      }
+    }
+
+    function fecharModalQr() {
+      document.getElementById('qrModal').classList.remove('open');
+    }
+
+    atualizarPainel();
+  </script>
+</body>
+</html>
