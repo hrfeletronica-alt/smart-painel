@@ -582,7 +582,7 @@
         <div class="window-title">
           <span>⚡</span> Balizamento • Controle de Brilho
         </div>
-        <span class="window-badge">SH 227</span>
+        <span class="window-badge" id="heliBadge" title="Clique para trocar de heliponto" onclick="alterarHelipontoId()" style="cursor: pointer; user-select: none;">🚁 HELI: PADRAO ✏️</span>
       </div>
 
       <!-- Corpo com os Botões Padrão de Software -->
@@ -645,12 +645,12 @@
   <!-- Modal do QR Code para Celular -->
   <div class="modal-overlay" id="qrModal" onclick="fecharModalQr(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <h3>Acesse pelo Celular</h3>
-      <p>Aponte a câmera para abrir na mesma rede:</p>
+      <h3>Acesse pelo Celular (4G/Wi-Fi)</h3>
+      <p>Aponte a câmera para abrir este heliponto específico:</p>
       <div class="qr-box">
         <canvas id="qrCanvas"></canvas>
       </div>
-      <div class="qr-url-text">http://192.168.31.236:5000</div>
+      <div class="qr-url-text" id="qrUrlDisplay">Carregando...</div>
       <button class="btn-modal-close" onclick="fecharModalQr()">Fechar</button>
     </div>
   </div>
@@ -661,16 +661,38 @@
 
   <script>
     let brilhoAtivo = 0;
-    const URL_CELULAR = "http://192.168.31.236:5000";
 
-    // CONFIGURAÇÃO MQTT EM NUVEM GLOBAL (Acesso de Qualquer Rede 4G/Wi-Fi)
-    const MQTT_BROKER = "broker.emqx.io";
-    const MQTT_PORT = 8084; // Porta WebSocket segura (WSS)
-    const TOPICO_COMANDO = "smarthelipontos/balizamento/comando";
-    const TOPICO_STATUS = "smarthelipontos/balizamento/status";
-    const CLIENT_ID = "web_client_" + Math.random().toString(16).substr(2, 8);
+    // ========================================================================
+    // GESTÃO MULTI-CLIENTE DINÂMICA (URL ?id=heliponto-01 ou Salvo no Navegador)
+    // ========================================================================
+    const urlParams = new URLSearchParams(window.location.search);
+    let heliId = (urlParams.get('id') || localStorage.getItem('smart_heli_id') || 'padrao')
+                  .trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    
+    // Memoriza a última seleção no celular do operador
+    localStorage.setItem('smart_heli_id', heliId);
+
+    // ========================================================================
+    // CONFIGURAÇÃO MQTT EM NUVEM GLOBAL (Tópicos Isolados por Heliponto)
+    // ========================================================================
+    const MQTT_BROKER    = "broker.emqx.io";
+    const MQTT_PORT      = 8084; // Porta WebSocket segura (WSS)
+    const TOPICO_COMANDO = `smarthelipontos/${heliId}/balizamento/comando`;
+    const TOPICO_STATUS  = `smarthelipontos/${heliId}/balizamento/status`;
+    const CLIENT_ID      = `web_${heliId}_` + Math.random().toString(16).substr(2, 6);
 
     let mqttClient = null;
+
+    function alterarHelipontoId() {
+      const novo = prompt("Digite o código identificador deste Heliponto / Cliente:", heliId);
+      if (novo && novo.trim() !== "") {
+        const idLimpo = novo.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+        localStorage.setItem('smart_heli_id', idLimpo);
+        const url = new URL(window.location.href);
+        url.searchParams.set('id', idLimpo);
+        window.location.href = url.toString();
+      }
+    }
 
     function conectarMQTT() {
       try {
@@ -696,7 +718,7 @@
           useSSL: true,
           timeout: 5,
           onSuccess: () => {
-            console.log("Conectado ao Broker MQTT Global (broker.emqx.io)!");
+            console.log(`Conectado ao Broker MQTT! Heliponto: ${heliId}`);
             mqttClient.subscribe(TOPICO_STATUS);
             mqttClient.subscribe(TOPICO_COMANDO);
           },
@@ -712,7 +734,7 @@
       }
     }
 
-    // Inicia conexão MQTT Global
+    // Inicia conexão MQTT Global isolada por cliente
     conectarMQTT();
 
     // Fallback local via WebSocket (quando estiver no PC local)
@@ -744,7 +766,7 @@
       brilhoAtivo = novoNivel;
       atualizarPainel();
 
-      // 1. Envia via MQTT Global para o ESP32-S3 em qualquer rede
+      // 1. Envia via MQTT Global para o ESP32 específico deste cliente
       if (mqttClient && mqttClient.isConnected()) {
         const msg = new Paho.MQTT.Message(novoNivel.toString());
         msg.destinationName = TOPICO_COMANDO;
@@ -756,9 +778,6 @@
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: nivel }));
       }
-
-      // 3. Fallback HTTP direto se estiver na rede do Access Point
-      fetch(`http://192.168.4.1/setGroup?btn=${novoNivel}`, { mode: 'no-cors' }).catch(() => {});
     }
 
     function desligarBalizamento() {
@@ -775,11 +794,14 @@
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: 0 }));
       }
-
-      fetch(`http://192.168.4.1/setGroup?btn=0`, { mode: 'no-cors' }).catch(() => {});
     }
 
     function atualizarPainel() {
+      const badge = document.getElementById('heliBadge');
+      if (badge) {
+        badge.innerText = `🚁 HELI: ${heliId.toUpperCase()} ✏️`;
+      }
+
       for (let i = 1; i <= 3; i++) {
         const btn = document.getElementById(`btnBrilho${i}`);
         const ind = document.getElementById(`ind${i}`);
@@ -798,19 +820,27 @@
 
       if (brilhoAtivo === 0) {
         dot.className = 'status-badge-dot';
-        text.innerText = 'Balizamento: DESLIGADO (Nuvem MQTT)';
+        text.innerText = `[${heliId.toUpperCase()}] Balizamento: DESLIGADO`;
       } else {
         dot.className = 'status-badge-dot on';
         const niveis = ["", "Nível 1 (30%)", "Nível 2 (70%)", "Nível 3 (100%)"];
-        text.innerText = `Balizamento: ATIVO • ${niveis[brilhoAtivo]} (Nuvem MQTT)`;
+        text.innerText = `[${heliId.toUpperCase()}] ATIVO • ${niveis[brilhoAtivo]}`;
       }
     }
 
     function abrirModalQr() {
       document.getElementById('qrModal').classList.add('open');
       const canvas = document.getElementById('qrCanvas');
+      
+      const url = new URL(window.location.href);
+      url.searchParams.set('id', heliId);
+      const linkFinal = url.toString();
+
+      const display = document.getElementById('qrUrlDisplay');
+      if (display) display.innerText = linkFinal;
+
       if (window.QRCode) {
-        QRCode.toCanvas(canvas, URL_CELULAR, { width: 170, margin: 1 }, function (error) {
+        QRCode.toCanvas(canvas, linkFinal, { width: 170, margin: 1 }, function (error) {
           if (error) console.error(error);
         });
       }

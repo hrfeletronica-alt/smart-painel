@@ -38,12 +38,17 @@ const char* WIFI_SSID     = "SEU_WIFI_NOME";
 const char* WIFI_PASSWORD = "SUA_SENHA_WIFI";
 
 // ============================================================================
-// 2. CONFIGURAÇÃO DO BROKER MQTT EM NUVEM (EMQX Broker Público / Seguro)
+// 2. CONFIGURAÇÃO DO HELIPONTO E BROKER MQTT
 // ============================================================================
+// Altere este ID para cada cliente/heliponto instalado (ex: "tower-sp", "fazenda-sol", "padrao")
+const char* HELIPONTO_ID   = "padrao"; 
+
 const char* MQTT_BROKER    = "broker.emqx.io";
 const int   MQTT_PORT      = 1883;
-const char* TOPICO_COMANDO = "smarthelipontos/balizamento/comando";
-const char* TOPICO_STATUS  = "smarthelipontos/balizamento/status";
+
+// Tópicos dinâmicos isolados por cliente:
+String TOPICO_COMANDO      = "smarthelipontos/" + String(HELIPONTO_ID) + "/balizamento/comando";
+String TOPICO_STATUS       = "smarthelipontos/" + String(HELIPONTO_ID) + "/balizamento/status";
 
 // ============================================================================
 // 3. PINAGEM DOS 6 RELÉS E DOS 3 BOTÕES FÍSICOS (ESP32 DevKit V1)
@@ -107,7 +112,7 @@ void aplicarNivelBrilho(int nivel) {
   if (mqttClient.connected()) {
     char payload[4];
     sprintf(payload, "%d", brilhoAtual);
-    mqttClient.publish(TOPICO_STATUS, payload, true);
+    mqttClient.publish(TOPICO_STATUS.c_str(), payload, true);
   }
 }
 
@@ -194,10 +199,10 @@ void reconectarMQTT() {
 
     if (mqttClient.connect(clientId.c_str())) {
       Serial.println("CONECTADO A NUVEM!");
-      mqttClient.subscribe(TOPICO_COMANDO);
+      mqttClient.subscribe(TOPICO_COMANDO.c_str());
       char payload[4];
       sprintf(payload, "%d", brilhoAtual);
-      mqttClient.publish(TOPICO_STATUS, payload, true);
+      mqttClient.publish(TOPICO_STATUS.c_str(), payload, true);
     } else {
       Serial.printf("Falha (rc=%d). Tentando em 3s...\n", mqttClient.state());
       delay(3000);
