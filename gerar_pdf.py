@@ -138,7 +138,7 @@ data_pinos = [
     ],
     [
         Paragraph("<b>BRILHO 2</b><br/>(70% Intensidade)", table_cell_bold),
-        Paragraph("<b>GPIO 21</b> (D22)", table_cell_bold),
+        Paragraph("<b>GPIO 22</b> (D22)", table_cell_bold),
         Paragraph("IN 4", table_cell_center),
         Paragraph("Relé 4 (NO4/COM4)", table_cell_center),
         Paragraph("Balizamento Pista - Potência Média (Circuito B)", table_cell_left),
