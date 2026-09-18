@@ -47,73 +47,104 @@ const char* MQTT_BROKER    = "broker.emqx.io";
 const int   MQTT_PORT      = 1883;
 
 // Tópicos dinâmicos isolados por cliente:
-String TOPICO_COMANDO      = "smarthelipontos/" + String(HELIPONTO_ID) + "/balizamento/comando";
-String TOPICO_STATUS       = "smarthelipontos/" + String(HELIPONTO_ID) + "/balizamento/status";
+String TOPICO_COMANDO          = "smarthelipontos/" + String(HELIPONTO_ID) + "/balizamento/comando";
+String TOPICO_STATUS           = "smarthelipontos/" + String(HELIPONTO_ID) + "/balizamento/status";
+String TOPICO_FOOTLIGHT_CMD    = "smarthelipontos/" + String(HELIPONTO_ID) + "/footlight/comando";
+String TOPICO_FOOTLIGHT_STATUS = "smarthelipontos/" + String(HELIPONTO_ID) + "/footlight/status";
 
 // ============================================================================
-// 3. PINAGEM DOS RELÉS E DOS 3 BOTÕES FÍSICOS (ESP32 DevKit V1)
+// 3. PINAGEM DOS RELÉS E BOTÕES FÍSICOS (ESP32 DevKit V1)
 // ============================================================================
-// Relés 1, 2 e 3 ATIVOS:
+// Relés:
 //   - Brilho 1 (30%):  Relé 1 (GPIO 18)
 //   - Brilho 2 (70%):  Relé 2 (GPIO 19)
 //   - Brilho 3 (100%): Relé 3 (GPIO 21)
-// Relés 4, 5 e 6 DESABILITADOS (GPIOs 22, 25, 26 mantidos desligados)
+//   - FOOT LIGHT:      Relé 4 (GPIO 22) <--- NOVO
+//   - Desabilitados:   Relé 5 (GPIO 25) e Relé 6 (GPIO 26)
 const uint8_t NUM_RELES = 6;
 const uint8_t PINOS_RELE[NUM_RELES] = {18, 19, 21, 22, 25, 26};
 
-// Mapeamento de 1 relé por estágio:
+// Mapeamento de 1 relé por estágio de brilho:
 const uint8_t RELE_ESTAGIO[3] = {0, 1, 2}; // Estágio 1 -> Relé 1, Estágio 2 -> Relé 2, Estágio 3 -> Relé 3
+const uint8_t PINO_RELE_FOOTLIGHT = 22;    // Relé 4 (GPIO 22) para FOOT LIGHT
 
-// Pinos dos 3 Push Buttons
-const uint8_t NUM_BOTOES = 3;
-const uint8_t PINOS_BOTAO[NUM_BOTOES] = {32, 33, 27};
+// Pinos dos Push Buttons Físicos:
+//   - Botão 1: GPIO 32 -> Brilho 1
+//   - Botão 2: GPIO 33 -> Brilho 2
+//   - Botão 3: GPIO 27 -> Brilho 3
+//   - Botão 4: GPIO 14 -> FOOT LIGHT (opcional no painel)
+const uint8_t NUM_BOTOES = 4;
+const uint8_t PINOS_BOTAO[NUM_BOTOES] = {32, 33, 27, 14};
 
 // Lógica de relé: Active LOW (LOW liga, HIGH desliga)
 #define RELE_LIGADO    LOW
 #define RELE_DESLIGADO HIGH
 
-int brilhoAtual = 0; // 0 = Desligado, 1 = 30%, 2 = 70%, 3 = 100%
+int brilhoAtual = 0;       // 0 = Desligado, 1 = 30%, 2 = 70%, 3 = 100%
+bool footLightAtivo = false; // Estado do FOOT LIGHT
 
 // Variáveis para Debounce dos botões físicos
-bool ultimoEstadoBotao[NUM_BOTOES] = {HIGH, HIGH, HIGH};
-unsigned long ultimoTempoDebounce[NUM_BOTOES] = {0, 0, 0};
+bool ultimoEstadoBotao[NUM_BOTOES] = {HIGH, HIGH, HIGH, HIGH};
+unsigned long ultimoTempoDebounce[NUM_BOTOES] = {0, 0, 0, 0};
 const unsigned long DELAY_DEBOUNCE = 50; // 50 milissegundos para filtrar ruído mecânico
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 
-// Desliga todos os relés imediatamente
+// Desliga os relés de balizamento (preserva o FOOT LIGHT)
+void desligarBalizamentoReles() {
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
+  }
+}
+
+// Desliga todos os relés da placa
 void desligarTodosReles() {
   for (int i = 0; i < NUM_RELES; i++) {
     digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
   }
 }
 
-// Aplica o nível de brilho com intertravamento (1 relé ativo por vez)
+// Aplica o nível de brilho com intertravamento nos 3 primeiros relés
 void aplicarNivelBrilho(int nivel) {
   if (nivel < 1 || nivel > 3) {
-    desligarTodosReles();
+    desligarBalizamentoReles();
     brilhoAtual = 0;
-    Serial.println("[STATUS] Balizamento DESLIGADO (Todos os reles off).");
+    Serial.println("[STATUS] Balizamento DESLIGADO.");
   } else {
-    // Intertravamento: desliga todos antes de ligar o novo estágio
-    desligarTodosReles();
+    // Intertravamento: desliga os outros relés de balizamento antes de ligar o novo
+    desligarBalizamentoReles();
 
-    // Aciona apenas o relé correspondente ao nível (Relés 4, 5 e 6 permanecem desabilitados)
     uint8_t releIndice = RELE_ESTAGIO[nivel - 1];
     digitalWrite(PINOS_RELE[releIndice], RELE_LIGADO);
 
     brilhoAtual = nivel;
-    Serial.printf("[STATUS] Estágio %d ATIVADO! Apenas Relé %d (GPIO %d) LIGADO. (Relés 4, 5 e 6 desabilitados)\n",
+    Serial.printf("[STATUS] Estágio %d ATIVADO! Relé %d (GPIO %d) LIGADO.\n",
                   nivel, releIndice + 1, PINOS_RELE[releIndice]);
   }
 
-  // Notifica o novo estado para a nuvem MQTT (atualiza celular e PC na mesma hora)
+  // Notifica o novo estado do balizamento via MQTT
   if (mqttClient.connected()) {
     char payload[4];
     sprintf(payload, "%d", brilhoAtual);
     mqttClient.publish(TOPICO_STATUS.c_str(), payload, true);
   }
+}
+
+// Controle do relé auxiliar FOOT LIGHT (independente do balizamento)
+void definirFootLight(bool estado) {
+  footLightAtivo = estado;
+  digitalWrite(PINO_RELE_FOOTLIGHT, footLightAtivo ? RELE_LIGADO : RELE_DESLIGADO);
+  Serial.printf("[STATUS] FOOT LIGHT %s! Relé 4 (GPIO %d)\n",
+                footLightAtivo ? "LIGADO" : "DESLIGADO", PINO_RELE_FOOTLIGHT);
+
+  if (mqttClient.connected()) {
+    mqttClient.publish(TOPICO_FOOTLIGHT_STATUS.c_str(), footLightAtivo ? "1" : "0", true);
+  }
+}
+
+void alternarFootLight() {
+  definirFootLight(!footLightAtivo);
 }
 
 // Alterna o brilho (se já estiver ativo, desliga)
@@ -137,10 +168,18 @@ void callbackMQTT(char* topic, byte* message, unsigned int length) {
   if (String(topic) == TOPICO_COMANDO) {
     int nivel = msg.toInt();
     aplicarNivelBrilho(nivel);
+  } else if (String(topic) == TOPICO_FOOTLIGHT_CMD) {
+    if (msg == "1") {
+      definirFootLight(true);
+    } else if (msg == "0") {
+      definirFootLight(false);
+    } else if (msg == "toggle") {
+      alternarFootLight();
+    }
   }
 }
 
-// Leitura contínua dos 3 botões físicos no painel com debounce
+// Leitura contínua dos 4 botões físicos no painel com debounce
 void verificarBotoesFisicos() {
   for (int i = 0; i < NUM_BOTOES; i++) {
     int leitura = digitalRead(PINOS_BOTAO[i]);
@@ -152,12 +191,17 @@ void verificarBotoesFisicos() {
 
     if ((millis() - ultimoTempoDebounce[i]) > DELAY_DEBOUNCE) {
       // Se o botão está realmente pressionado (LOW com PULL-UP)
-      static bool estadoProcessado[NUM_BOTOES] = {false, false, false};
+      static bool estadoProcessado[NUM_BOTOES] = {false, false, false, false};
 
       if (leitura == LOW && !estadoProcessado[i]) {
         estadoProcessado[i] = true;
-        Serial.printf("\n[BOTÃO FÍSICO %d PRESSIONADO (GPIO %d)]\n", i + 1, PINOS_BOTAO[i]);
-        alternarBrilho(i + 1); // 1 = Brilho 1, 2 = Brilho 2, 3 = Brilho 3
+        if (i < 3) {
+          Serial.printf("\n[BOTÃO FÍSICO %d PRESSIONADO (GPIO %d)]\n", i + 1, PINOS_BOTAO[i]);
+          alternarBrilho(i + 1); // 1 = Brilho 1, 2 = Brilho 2, 3 = Brilho 3
+        } else if (i == 3) {
+          Serial.printf("\n[BOTÃO FÍSICO FOOT LIGHT PRESSIONADO (GPIO %d)]\n", PINOS_BOTAO[i]);
+          alternarFootLight();
+        }
       } else if (leitura == HIGH) {
         estadoProcessado[i] = false;
       }
@@ -199,10 +243,15 @@ void reconectarMQTT() {
 
     if (mqttClient.connect(clientId.c_str())) {
       Serial.println("CONECTADO A NUVEM!");
+      // Assina tópicos de comando de balizamento e foot light
       mqttClient.subscribe(TOPICO_COMANDO.c_str());
+      mqttClient.subscribe(TOPICO_FOOTLIGHT_CMD.c_str());
+
+      // Notifica estados atuais ao reconectar
       char payload[4];
       sprintf(payload, "%d", brilhoAtual);
       mqttClient.publish(TOPICO_STATUS.c_str(), payload, true);
+      mqttClient.publish(TOPICO_FOOTLIGHT_STATUS.c_str(), footLightAtivo ? "1" : "0", true);
     } else {
       Serial.printf("Falha (rc=%d). Tentando em 3s...\n", mqttClient.state());
       delay(3000);

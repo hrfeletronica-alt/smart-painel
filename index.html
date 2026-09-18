@@ -357,6 +357,13 @@
       box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
     }
 
+    /* Estado LIGADO exclusivo para FOOT LIGHT (Verde Esmeralda Aeronáutico) */
+    .std-btn.footlight-btn.active {
+      background: #059669;
+      border-color: #34d399;
+      box-shadow: 0 0 15px rgba(52, 211, 153, 0.45);
+    }
+
     .btn-left {
       display: flex;
       align-items: center;
@@ -623,6 +630,17 @@
           </button>
 
         </div>
+        
+        <!-- SEÇÃO ILUMINAÇÃO AUXILIAR / SOLO -->
+        <span class="section-label" style="margin-top: 1rem;">Iluminação Auxiliar de Solo:</span>
+        <button class="std-btn footlight-btn" id="btnFootLight" onclick="alternarFootLight()" style="margin-bottom: 1rem;">
+          <div class="btn-left">
+            <span class="btn-icon">💡</span>
+            <span class="btn-title">FOOT LIGHT</span>
+            <span class="btn-sub">(Luz de Solo)</span>
+          </div>
+          <span class="btn-status-indicator" id="indFootLight">DESLIGADO</span>
+        </button>
 
         <!-- Botão de Desligar Balizamento -->
         <button class="btn-power-off" onclick="desligarBalizamento()">
@@ -661,6 +679,7 @@
 
   <script>
     let brilhoAtivo = 0;
+    let footLightAtivo = false;
 
     // ========================================================================
     // GESTÃO MULTI-CLIENTE DINÂMICA (URL ?id=heliponto-01 ou Salvo no Navegador)
@@ -675,11 +694,13 @@
     // ========================================================================
     // CONFIGURAÇÃO MQTT EM NUVEM GLOBAL (Tópicos Isolados por Heliponto)
     // ========================================================================
-    const MQTT_BROKER    = "broker.emqx.io";
-    const MQTT_PORT      = 8084; // Porta WebSocket segura (WSS)
-    const TOPICO_COMANDO = `smarthelipontos/${heliId}/balizamento/comando`;
-    const TOPICO_STATUS  = `smarthelipontos/${heliId}/balizamento/status`;
-    const CLIENT_ID      = `web_${heliId}_` + Math.random().toString(16).substr(2, 6);
+    const MQTT_BROKER             = "broker.emqx.io";
+    const MQTT_PORT               = 8084; // Porta WebSocket segura (WSS)
+    const TOPICO_COMANDO          = `smarthelipontos/${heliId}/balizamento/comando`;
+    const TOPICO_STATUS           = `smarthelipontos/${heliId}/balizamento/status`;
+    const TOPICO_FOOTLIGHT_CMD    = `smarthelipontos/${heliId}/footlight/comando`;
+    const TOPICO_FOOTLIGHT_STATUS = `smarthelipontos/${heliId}/footlight/status`;
+    const CLIENT_ID               = `web_${heliId}_` + Math.random().toString(16).substr(2, 6);
 
     let mqttClient = null;
 
@@ -705,12 +726,19 @@
 
         mqttClient.onMessageArrived = (message) => {
           console.log("[MQTT RECEBIDO]:", message.destinationName, message.payloadString);
+          
+          // Trata status do Balizamento
           if (message.destinationName === TOPICO_STATUS || message.destinationName === TOPICO_COMANDO) {
             const nivel = parseInt(message.payloadString, 10);
             if (!isNaN(nivel)) {
               brilhoAtivo = nivel;
               atualizarPainel();
             }
+          }
+          // Trata status do FOOT LIGHT
+          else if (message.destinationName === TOPICO_FOOTLIGHT_STATUS || message.destinationName === TOPICO_FOOTLIGHT_CMD) {
+            footLightAtivo = (message.payloadString === "1" || message.payloadString === "true");
+            atualizarPainel();
           }
         };
 
@@ -721,6 +749,8 @@
             console.log(`Conectado ao Broker MQTT! Heliponto: ${heliId}`);
             mqttClient.subscribe(TOPICO_STATUS);
             mqttClient.subscribe(TOPICO_COMANDO);
+            mqttClient.subscribe(TOPICO_FOOTLIGHT_STATUS);
+            mqttClient.subscribe(TOPICO_FOOTLIGHT_CMD);
           },
           onFailure: (err) => {
             console.error("Falha ao conectar no MQTT:", err);
@@ -760,23 +790,34 @@
     }
     conectarWebSocket();
 
-    // Acionamento com suporte a Nuvem MQTT e Local
+    // Acionamento dos níveis de brilho
     function alternarBrilho(nivel) {
       let novoNivel = (brilhoAtivo === nivel) ? 0 : nivel;
       brilhoAtivo = novoNivel;
       atualizarPainel();
 
-      // 1. Envia via MQTT Global para o ESP32 específico deste cliente
       if (mqttClient && mqttClient.isConnected()) {
         const msg = new Paho.MQTT.Message(novoNivel.toString());
         msg.destinationName = TOPICO_COMANDO;
-        msg.retained = true; // Mantém o estado para quando o ESP32 reiniciar
+        msg.retained = true;
         mqttClient.send(msg);
       }
 
-      // 2. Sincroniza via WebSocket local
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'SET_BRIGHTNESS', brilho: nivel }));
+      }
+    }
+
+    // Acionamento independente do FOOT LIGHT (Luz de Solo)
+    function alternarFootLight() {
+      footLightAtivo = !footLightAtivo;
+      atualizarPainel();
+
+      if (mqttClient && mqttClient.isConnected()) {
+        const msg = new Paho.MQTT.Message(footLightAtivo ? "1" : "0");
+        msg.destinationName = TOPICO_FOOTLIGHT_CMD;
+        msg.retained = true;
+        mqttClient.send(msg);
       }
     }
 
@@ -802,6 +843,7 @@
         badge.innerText = `🚁 HELI: ${heliId.toUpperCase()} ✏️`;
       }
 
+      // Atualiza botões de brilho
       for (let i = 1; i <= 3; i++) {
         const btn = document.getElementById(`btnBrilho${i}`);
         const ind = document.getElementById(`ind${i}`);
@@ -815,16 +857,34 @@
         }
       }
 
+      // Atualiza botão FOOT LIGHT
+      const btnFL = document.getElementById('btnFootLight');
+      const indFL = document.getElementById('indFootLight');
+      if (btnFL && indFL) {
+        if (footLightAtivo) {
+          btnFL.classList.add('active');
+          indFL.innerText = 'LIGADO';
+        } else {
+          btnFL.classList.remove('active');
+          indFL.innerText = 'DESLIGADO';
+        }
+      }
+
+      // Barra de status inferior
       const dot = document.getElementById('statusDot');
       const text = document.getElementById('statusText');
 
-      if (brilhoAtivo === 0) {
+      if (brilhoAtivo === 0 && !footLightAtivo) {
         dot.className = 'status-badge-dot';
         text.innerText = `[${heliId.toUpperCase()}] Balizamento: DESLIGADO`;
       } else {
         dot.className = 'status-badge-dot on';
         const niveis = ["", "Nível 1 (30%)", "Nível 2 (70%)", "Nível 3 (100%)"];
-        text.innerText = `[${heliId.toUpperCase()}] ATIVO • ${niveis[brilhoAtivo]}`;
+        let statusStr = brilhoAtivo > 0 ? `Balizamento: ${niveis[brilhoAtivo]}` : 'Balizamento: OFF';
+        if (footLightAtivo) {
+          statusStr += ' • FOOT LIGHT: ON';
+        }
+        text.innerText = `[${heliId.toUpperCase()}] ${statusStr}`;
       }
     }
 
