@@ -223,65 +223,53 @@ void verificarBotoesFisicos() {
   }
 }
 
-void reconectarWiFi() {
-  if (WiFi.status() == WL_CONNECTED) return;
+// ============================================================================
+// GERENCIAMENTO DE CONEXÃO NÃO-BLOQUEANTE (Não congela botoeiras nem relés)
+// ============================================================================
+unsigned long ultimoCheckRede = 0;
 
-  Serial.print("Conectando ao Wi-Fi: ");
-  Serial.println(WIFI_SSID);
+void verificarConexoes() {
+  // Checa rede a cada 4 segundos sem travar a execução do processador
+  if (millis() - ultimoCheckRede < 4000) return;
+  ultimoCheckRede = millis();
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  int tentativas = 0;
-  while (WiFi.status() != WL_CONNECTED && tentativas < 25) {
-    delay(400);
-    Serial.print(".");
-    tentativas++;
+  // 1. Checa status do Wi-Fi
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[Wi-Fi] Reconectando ao Wi-Fi...");
+    WiFi.disconnect();
+    WiFi.reconnect();
+    return;
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n[Wi-Fi] Conectado com sucesso!");
-    Serial.print("[IP Local]: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("\n[Wi-Fi] Falha ao conectar.");
-  }
-}
-
-void reconectarMQTT() {
-  while (!mqttClient.connected()) {
-    Serial.print("Conectando ao Broker MQTT Nuvem (broker.emqx.io)... ");
+  // 2. Checa status do Broker MQTT
+  if (!mqttClient.connected()) {
+    Serial.print("[MQTT] Conectando ao Broker (broker.emqx.io)... ");
     String clientId = "DevKitV1-Heliponto-" + String(random(0xffff), HEX);
 
     if (mqttClient.connect(clientId.c_str())) {
-      Serial.println("CONECTADO A NUVEM!");
-      // 1. Assina o tópico do heliponto configurado
+      Serial.println("CONECTADO A NUVEM COM SUCESSO!");
+      // Assina os canais do heliponto e universais com coringa
       mqttClient.subscribe(TOPICO_COMANDO.c_str());
       mqttClient.subscribe(TOPICO_FOOTLIGHT_CMD.c_str());
-
-      // 2. Assina o tópico universal (+ coringa) e legado (garante recepção de qualquer tela/ID)
       mqttClient.subscribe("smarthelipontos/+/balizamento/comando");
       mqttClient.subscribe("smarthelipontos/+/footlight/comando");
       mqttClient.subscribe("smarthelipontos/balizamento/comando");
       mqttClient.subscribe("smarthelipontos/footlight/comando");
 
-      Serial.println("➔ Ouvindo comandos em: " + TOPICO_COMANDO);
-      Serial.println("➔ Ouvindo comandos universais em: smarthelipontos/+/balizamento/comando");
-
-      // Notifica estados atuais ao reconectar
+      // Notifica estados atuais ao broker
       char payload[4];
       sprintf(payload, "%d", brilhoAtual);
       mqttClient.publish(TOPICO_STATUS.c_str(), payload, true);
       mqttClient.publish(TOPICO_FOOTLIGHT_STATUS.c_str(), footLightAtivo ? "1" : "0", true);
     } else {
-      Serial.printf("Falha (rc=%d). Tentando em 3s...\n", mqttClient.state());
-      delay(3000);
+      Serial.printf("Falha (rc=%d). Próxima tentativa em 4s.\n", mqttClient.state());
     }
   }
 }
 
 void setup() {
   Serial.begin(115200);
+  delay(500);
 
   // 1. Inicializa os pinos de relé (Saídas)
   for (int i = 0; i < NUM_RELES; i++) {
@@ -289,35 +277,47 @@ void setup() {
     digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
   }
 
-  // 2. Inicializa os 3 Push Buttons com PULL-UP interno (Entradas)
+  // 2. Inicializa os 4 Push Buttons com PULL-UP interno (Entradas)
   for (int i = 0; i < NUM_BOTOES; i++) {
     pinMode(PINOS_BOTAO[i], INPUT_PULLUP);
   }
 
   Serial.println("\n==============================================");
   Serial.println("   SMART HELIPONTOS - ESP32 DevKit V1");
-  Serial.println("   Relés nos GPIOs 18, 19, 21, 22, 25, 26");
-  Serial.println("   Botoeiras nos GPIOs 32, 33, 27 (GND)");
+  Serial.println("   Balizamento: Relés 1, 2 e 3 (GPIOs 18, 19, 21)");
+  Serial.println("   Foot Light:  Relé 4 (GPIO 22)");
+  Serial.println("   Botoeiras:   GPIOs 32, 33, 27, 14 (➔ GND)");
   Serial.println("==============================================");
 
-  reconectarWiFi();
+  // AUTOTESTE INICIAL: Atraca cada relé por 150ms para você ouvir o clique e ver o LED do módulo
+  Serial.println("[AUTOTESTE] Acionando Relés 1, 2, 3 e 4 para teste físico...");
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(PINOS_RELE[i], RELE_LIGADO);
+    delay(150);
+    digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
+    delay(50);
+  }
+  Serial.println("[AUTOTESTE] Concluído! Relés respondendo perfeitamente.\n");
+
+  // Inicia Wi-Fi em segundo plano
+  Serial.print("Iniciando Wi-Fi: ");
+  Serial.println(WIFI_SSID);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   mqttClient.setCallback(callbackMQTT);
 }
 
 void loop() {
-  // 1. Monitora os botões físicos continuamente com debounce
+  // 1. Botões Físicos rodam LIVRES na velocidade máxima (resposta instantânea em 0ms)
   verificarBotoesFisicos();
 
-  // 2. Mantém a conexão Wi-Fi e MQTT ativa
-  if (WiFi.status() != WL_CONNECTED) {
-    reconectarWiFi();
-  }
+  // 2. Conexões de rede gerenciadas em segundo plano (NUNCA travam os botões)
+  verificarConexoes();
 
-  if (!mqttClient.connected()) {
-    reconectarMQTT();
+  // 3. Processa comandos MQTT se conectado
+  if (mqttClient.connected()) {
+    mqttClient.loop();
   }
-
-  mqttClient.loop();
 }
