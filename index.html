@@ -629,18 +629,18 @@
             <span class="btn-status-indicator" id="ind3">DESLIGADO</span>
           </button>
 
+          <!-- BOTÃO FOOT LIGHT (MESMO TAMANHO E ESTRUTURA DOS OUTROS) -->
+          <!-- Smart Helipontos Control System v1.2 -->
+          <button class="std-btn footlight-btn" id="btnFootLight" onclick="alternarFootLight()">
+            <div class="btn-left">
+              <span class="btn-icon">💡</span>
+              <span class="btn-title">Foot Light</span>
+              <span class="btn-sub">(Solo)</span>
+            </div>
+            <span class="btn-status-indicator" id="indFootLight">DESLIGADO</span>
+          </button>
+
         </div>
-        
-        <!-- SEÇÃO ILUMINAÇÃO AUXILIAR / SOLO -->
-        <span class="section-label" style="margin-top: 1rem;">Iluminação Auxiliar de Solo:</span>
-        <button class="std-btn footlight-btn" id="btnFootLight" onclick="alternarFootLight()" style="margin-bottom: 1rem;">
-          <div class="btn-left">
-            <span class="btn-icon">💡</span>
-            <span class="btn-title">FOOT LIGHT</span>
-            <span class="btn-sub">(Luz de Solo)</span>
-          </div>
-          <span class="btn-status-indicator" id="indFootLight">DESLIGADO</span>
-        </button>
 
         <!-- Botão de Desligar Balizamento -->
         <button class="btn-power-off" onclick="desligarBalizamento()">

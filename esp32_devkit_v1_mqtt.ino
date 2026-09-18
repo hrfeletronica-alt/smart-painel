@@ -1,30 +1,34 @@
 /*
  * ============================================================================
- * PROJETO: SMART HELIPONTOS - CONTROLE DE BALIZAMENTO NOTURNO
+ * PROJETO: SMART HELIPONTOS - CONTROLE DE BALIZAMENTO NOTURNO E FOOT LIGHT
  * HARDWARE: ESP32 DevKit V1 (ESP-WROOM-32 de 30 ou 38 pinos)
  * RECURSOS:
  *  1. Controle via Nuvem MQTT (App Web / Celular 4G e PC)
- *  2. Controle Físico Local com 3 Push Buttons (Botoeiras no Painel)
+ *  2. Controle Físico Local com 4 Push Buttons (Botoeiras no Painel)
  * ============================================================================
  * 
  * MAPA DE PINOS SEGUROS NO ESP32 DevKit V1:
  * 
- * [SAÍDAS PARA OS 6 RELÉS]
- *   - Estágio 1 (30%):  Relé 1 (GPIO 18) e Relé 2 (GPIO 19)
- *   - Estágio 2 (70%):  Relé 3 (GPIO 21) e Relé 4 (GPIO 22)
- *   - Estágio 3 (100%): Relé 5 (GPIO 25) e Relé 6 (GPIO 26)
+ * [SAÍDAS PARA OS RELÉS]
+ *   - Brilho 1 (30%):  Relé 1 (GPIO 18)
+ *   - Brilho 2 (70%):  Relé 2 (GPIO 19)
+ *   - Brilho 3 (100%): Relé 3 (GPIO 21)
+ *   - FOOT LIGHT:      Relé 4 (GPIO 22) -> Circuito Independente de Solo
+ *   - Desabilitados:   Relé 5 (GPIO 25) e Relé 6 (GPIO 26) mantidos desligados
  * 
- * [ENTRADAS PARA OS 3 PUSH BUTTONS (BOTOEIRAS)]
+ * [ENTRADAS PARA OS 4 PUSH BUTTONS (BOTOEIRAS)]
  *   - Usando PULL-UP interno (Ligue o botão entre o pino do ESP32 e o GND):
- *   - Botão Físico 1 (Brilho 1): GPIO 32 ➔ GND
- *   - Botão Físico 2 (Brilho 2): GPIO 33 ➔ GND
- *   - Botão Físico 3 (Brilho 3): GPIO 27 ➔ GND
+ *   - Botão Físico 1 (Brilho 1):   GPIO 32 ➔ GND
+ *   - Botão Físico 2 (Brilho 2):   GPIO 33 ➔ GND
+ *   - Botão Físico 3 (Brilho 3):   GPIO 27 ➔ GND
+ *   - Botão Físico 4 (FOOT LIGHT): GPIO 14 ➔ GND
  * 
  * REGRA DO SISTEMA:
  * - O botão físico e o aplicativo trabalham em conjunto e sincronizados.
- * - Pressionar um botão físico comuta o estágio e avisa o celular na mesma hora via MQTT.
- * - Intertravamento rígido: Nunca mais de 2 relés ligados simultaneamente.
- * - Clicar no mesmo botão desliga o balizamento (Toggle).
+ * - Pressionar um botão físico comuta o estado e avisa o celular na mesma hora via MQTT.
+ * - Intertravamento rígido no balizamento: Apenas 1 nível de brilho ativo por vez.
+ * - Clicar no mesmo botão desliga o estágio (Toggle).
+ * - O FOOT LIGHT opera de forma independente do balizamento.
  */
 
 #include <Arduino.h>
