@@ -271,10 +271,10 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  // 1. Inicializa os pinos de relé (Saídas)
+  // 1. Inicializa os pinos de relé como desligados (sem pulsar nem bater relé no boot)
   for (int i = 0; i < NUM_RELES; i++) {
-    pinMode(PINOS_RELE[i], OUTPUT);
     digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
+    pinMode(PINOS_RELE[i], OUTPUT);
   }
 
   // 2. Inicializa os 4 Push Buttons com PULL-UP interno (Entradas)
@@ -287,17 +287,8 @@ void setup() {
   Serial.println("   Balizamento: Relés 1, 2 e 3 (GPIOs 18, 19, 21)");
   Serial.println("   Foot Light:  Relé 4 (GPIO 22)");
   Serial.println("   Botoeiras:   GPIOs 32, 33, 27, 14 (➔ GND)");
+  Serial.println("   Status:      Todos os relés desligados no boot");
   Serial.println("==============================================");
-
-  // AUTOTESTE INICIAL: Atraca cada relé por 150ms para você ouvir o clique e ver o LED do módulo
-  Serial.println("[AUTOTESTE] Acionando Relés 1, 2, 3 e 4 para teste físico...");
-  for (int i = 0; i < 4; i++) {
-    digitalWrite(PINOS_RELE[i], RELE_LIGADO);
-    delay(150);
-    digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
-    delay(50);
-  }
-  Serial.println("[AUTOTESTE] Concluído! Relés respondendo perfeitamente.\n");
 
   // Inicia Wi-Fi em segundo plano
   Serial.print("Iniciando Wi-Fi: ");
