@@ -533,6 +533,202 @@
       cursor: pointer;
     }
 
+    /* Botão de Trava/Segurança no Cabeçalho */
+    .lock-badge-btn {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.22rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .lock-badge-btn:hover {
+      background: rgba(239, 68, 68, 0.35);
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    .lock-badge-btn.unlocked {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+
+    .lock-badge-btn.unlocked:hover {
+      background: rgba(16, 185, 129, 0.35);
+      border-color: #10b981;
+      color: #ffffff;
+    }
+
+    /* Banner de Painel Protegido */
+    .lock-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px dashed rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+      font-size: 0.73rem;
+      font-weight: 700;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lock-banner:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    .lock-banner.hidden {
+      display: none !important;
+    }
+
+    /* Estilização do Modal de PIN */
+    .pin-card {
+      max-width: 330px;
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 25px rgba(2, 132, 199, 0.25);
+    }
+
+    .pin-header-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .pin-display {
+      display: flex;
+      justify-content: center;
+      gap: 0.9rem;
+      margin: 1.25rem 0 0.6rem;
+    }
+
+    .pin-dot {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      border: 2px solid rgba(56, 189, 248, 0.5);
+      background: transparent;
+      transition: all 0.15s ease;
+    }
+
+    .pin-dot.filled {
+      background: #38bdf8;
+      box-shadow: 0 0 10px #38bdf8;
+      border-color: #38bdf8;
+    }
+
+    .pin-dot.error {
+      background: #ef4444 !important;
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 12px #ef4444 !important;
+    }
+
+    .pin-dot.success {
+      background: #10b981 !important;
+      border-color: #10b981 !important;
+      box-shadow: 0 0 12px #10b981 !important;
+    }
+
+    .pin-feedback {
+      min-height: 1.2rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 0.85rem;
+    }
+
+    .pin-feedback.error {
+      color: #f87171;
+    }
+
+    .pin-feedback.success {
+      color: #4ade80;
+    }
+
+    .pin-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      max-width: 250px;
+      margin: 0 auto 1.1rem;
+    }
+
+    .pin-key {
+      height: 52px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(30, 41, 59, 0.85);
+      color: #f8fafc;
+      font-size: 1.3rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .pin-key:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    .pin-key:active {
+      transform: scale(0.92);
+      background: #38bdf8;
+      color: #0f172a;
+    }
+
+    .pin-action-key {
+      font-size: 1.15rem;
+      color: #94a3b8;
+    }
+
+    .pin-confirm-key {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+      font-size: 1.25rem;
+    }
+
+    .pin-confirm-key:hover {
+      background: #10b981;
+      color: white;
+      border-color: #10b981;
+    }
+
+    .pin-hint-text {
+      font-size: 0.68rem;
+      color: #64748b;
+      margin-top: 0.85rem;
+    }
+
+    @keyframes shakePin {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    .shake {
+      animation: shakePin 0.35s ease-in-out;
+    }
+
     footer {
       text-align: center;
       padding: 0.85rem;
@@ -589,12 +785,22 @@
         <div class="window-title">
           <span>⚡</span> Balizamento • Controle de Brilho
         </div>
-        <span class="window-badge" id="heliBadge" title="Clique para trocar de heliponto" onclick="alterarHelipontoId()" style="cursor: pointer; user-select: none;">🚁 HELI: PADRAO ✏️</span>
+        <div style="display: flex; align-items: center; gap: 0.45rem;">
+          <button class="lock-badge-btn" id="lockBadgeBtn" onclick="aoClicarNoBotaoTrava()" title="Status de Segurança do Painel">
+            <span id="lockIcon">🔒</span> <span id="lockLabel">Travado</span>
+          </button>
+          <span class="window-badge" id="heliBadge" title="Clique para trocar de heliponto" onclick="alterarHelipontoId()" style="cursor: pointer; user-select: none;">🚁 HELI: PADRAO ✏️</span>
+        </div>
       </div>
 
       <!-- Corpo com os Botões Padrão de Software -->
       <div class="window-body">
         
+        <!-- Banner de Painel Bloqueado -->
+        <div class="lock-banner" id="lockBanner" onclick="abrirModalPin()" title="Toque para destravar com o PIN de Operador">
+          <span>🔒</span> Painel Protegido • Toque para Destravar com PIN
+        </div>
+
         <span class="section-label">Estágios de Intensidade Luminosa:</span>
 
         <div class="buttons-stack">
@@ -668,6 +874,45 @@
     </div>
   </div>
 
+  <!-- Modal de Autenticação por Senha / PIN -->
+  <div class="modal-overlay" id="pinModal" onclick="fecharModalPin(event)">
+    <div class="modal-card pin-card" onclick="event.stopPropagation()">
+      <div class="pin-header-icon">🔒</div>
+      <h3>Painel Protegido</h3>
+      <p>Digite o PIN de Operador para liberar os comandos:</p>
+      
+      <!-- Indicadores de Dígitos -->
+      <div class="pin-display" id="pinDisplay">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+      </div>
+      <div class="pin-feedback" id="pinFeedback">Digite 4 números ou use o teclado físico</div>
+
+      <!-- Teclado Numérico Virtual (Toque no Celular) -->
+      <div class="pin-keypad">
+        <button type="button" class="pin-key" onclick="digitarPin('1')">1</button>
+        <button type="button" class="pin-key" onclick="digitarPin('2')">2</button>
+        <button type="button" class="pin-key" onclick="digitarPin('3')">3</button>
+        <button type="button" class="pin-key" onclick="digitarPin('4')">4</button>
+        <button type="button" class="pin-key" onclick="digitarPin('5')">5</button>
+        <button type="button" class="pin-key" onclick="digitarPin('6')">6</button>
+        <button type="button" class="pin-key" onclick="digitarPin('7')">7</button>
+        <button type="button" class="pin-key" onclick="digitarPin('8')">8</button>
+        <button type="button" class="pin-key" onclick="digitarPin('9')">9</button>
+        <button type="button" class="pin-key pin-action-key" onclick="apagarDigitoPin()" title="Apagar">⌫</button>
+        <button type="button" class="pin-key" onclick="digitarPin('0')">0</button>
+        <button type="button" class="pin-key pin-confirm-key" onclick="confirmarPin()" title="Confirmar">🔓</button>
+      </div>
+
+      <div class="pin-footer-actions">
+        <button type="button" class="btn-modal-close" onclick="fecharModalPin()">Cancelar</button>
+      </div>
+      <div class="pin-hint-text">PIN de fábrica: <b>1234</b> (alterável após destravar)</div>
+    </div>
+  </div>
+
   <footer>
     Smart Helipontos • Tecnologia de Balizamento Homologado ANAC • Painel de Controle
   </footer>
@@ -700,6 +945,7 @@
     let mqttClient = null;
 
     function alterarHelipontoId() {
+      if (!verificarAcessoPermitido()) return;
       const novo = prompt("Digite o código identificador deste Heliponto / Cliente:", heliId);
       if (novo && novo.trim() !== "") {
         const idLimpo = novo.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
@@ -785,8 +1031,209 @@
     }
     conectarWebSocket();
 
-    // Acionamento dos níveis de brilho
+    // ========================================================================
+    // CONTROLE DE ACESSO E SEGURANÇA POR SENHA / PIN (Smart Lock)
+    // ========================================================================
+    let pinCorreto = localStorage.getItem('smart_painel_pin') || '1234';
+    let painelBloqueado = true; // Inicia bloqueado por segurança
+    let pinDigitado = '';
+    let timerAutoBloqueio = null;
+    const TEMPO_AUTO_BLOQUEIO_MS = 2 * 60 * 1000; // 2 minutos de inatividade
+
+    function atualizarUiSeguranca() {
+      const lockBtn = document.getElementById('lockBadgeBtn');
+      const lockIcon = document.getElementById('lockIcon');
+      const lockLabel = document.getElementById('lockLabel');
+      const lockBanner = document.getElementById('lockBanner');
+      const buttonsStack = document.querySelector('.buttons-stack');
+
+      if (painelBloqueado) {
+        if (lockBtn) {
+          lockBtn.classList.remove('unlocked');
+          if (lockIcon) lockIcon.innerText = '🔒';
+          if (lockLabel) lockLabel.innerText = 'Travado';
+        }
+        if (lockBanner) lockBanner.classList.remove('hidden');
+        if (buttonsStack) buttonsStack.classList.add('locked');
+      } else {
+        if (lockBtn) {
+          lockBtn.classList.add('unlocked');
+          if (lockIcon) lockIcon.innerText = '🔓';
+          if (lockLabel) lockLabel.innerText = 'Liberado';
+        }
+        if (lockBanner) lockBanner.classList.add('hidden');
+        if (buttonsStack) buttonsStack.classList.remove('locked');
+      }
+    }
+
+    function reiniciarTimerAutoBloqueio() {
+      if (timerAutoBloqueio) clearTimeout(timerAutoBloqueio);
+      if (!painelBloqueado) {
+        timerAutoBloqueio = setTimeout(() => {
+          trancarPainel();
+        }, TEMPO_AUTO_BLOQUEIO_MS);
+      }
+    }
+
+    function verificarAcessoPermitido() {
+      if (painelBloqueado) {
+        abrirModalPin();
+        return false;
+      }
+      reiniciarTimerAutoBloqueio();
+      return true;
+    }
+
+    function abrirModalPin() {
+      pinDigitado = '';
+      atualizarDisplayPin();
+      const feedback = document.getElementById('pinFeedback');
+      if (feedback) {
+        feedback.innerText = 'Digite 4 números ou use o teclado físico';
+        feedback.className = 'pin-feedback';
+      }
+      const card = document.querySelector('.pin-card');
+      if (card) card.classList.remove('shake');
+      document.getElementById('pinModal').classList.add('open');
+    }
+
+    function fecharModalPin(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('pinModal').classList.remove('open');
+      pinDigitado = '';
+    }
+
+    function digitarPin(digito) {
+      if (pinDigitado.length >= 4) return;
+      pinDigitado += digito;
+      atualizarDisplayPin();
+
+      if (pinDigitado.length === 4) {
+        setTimeout(confirmarPin, 140);
+      }
+    }
+
+    function apagarDigitoPin() {
+      if (pinDigitado.length > 0) {
+        pinDigitado = pinDigitado.slice(0, -1);
+        atualizarDisplayPin();
+      }
+    }
+
+    function atualizarDisplayPin() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`dot${i}`);
+        if (dot) {
+          dot.className = 'pin-dot' + (i < pinDigitado.length ? ' filled' : '');
+        }
+      }
+    }
+
+    function confirmarPin() {
+      const feedback = document.getElementById('pinFeedback');
+      const card = document.querySelector('.pin-card');
+
+      if (pinDigitado === pinCorreto) {
+        // Sucesso
+        for (let i = 0; i < 4; i++) {
+          const dot = document.getElementById(`dot${i}`);
+          if (dot) dot.className = 'pin-dot success';
+        }
+        if (feedback) {
+          feedback.innerText = '✔ Acesso Autorizado! Painel Liberado.';
+          feedback.className = 'pin-feedback success';
+        }
+        painelBloqueado = false;
+        atualizarUiSeguranca();
+        reiniciarTimerAutoBloqueio();
+
+        setTimeout(() => {
+          fecharModalPin();
+        }, 400);
+      } else {
+        // Erro
+        for (let i = 0; i < 4; i++) {
+          const dot = document.getElementById(`dot${i}`);
+          if (dot) dot.className = 'pin-dot error';
+        }
+        if (feedback) {
+          feedback.innerText = '❌ PIN Incorreto! Tente novamente.';
+          feedback.className = 'pin-feedback error';
+        }
+        if (card) {
+          card.classList.remove('shake');
+          void card.offsetWidth;
+          card.classList.add('shake');
+        }
+
+        setTimeout(() => {
+          pinDigitado = '';
+          atualizarDisplayPin();
+          if (feedback) {
+            feedback.innerText = 'Digite 4 números';
+            feedback.className = 'pin-feedback';
+          }
+        }, 750);
+      }
+    }
+
+    function trancarPainel() {
+      painelBloqueado = true;
+      if (timerAutoBloqueio) clearTimeout(timerAutoBloqueio);
+      atualizarUiSeguranca();
+    }
+
+    function aoClicarNoBotaoTrava() {
+      if (painelBloqueado) {
+        abrirModalPin();
+      } else {
+        const opcao = prompt("O painel está LIBERADO.\n\nEscolha uma opção:\n1 = Trancar o painel agora\n2 = Trocar senha PIN\n\n(Cancelar para manter liberado)");
+        if (opcao === '1') {
+          trancarPainel();
+        } else if (opcao === '2') {
+          trocarSenhaPin();
+        }
+      }
+    }
+
+    function trocarSenhaPin() {
+      const atual = prompt("Digite o PIN ATUAL para confirmação:");
+      if (atual === null) return;
+      if (atual !== pinCorreto) {
+        alert("PIN atual incorreto! Ação cancelada.");
+        return;
+      }
+      const novo = prompt("Digite o NOVO PIN (exatamente 4 dígitos numéricos):");
+      if (!novo || novo.length !== 4 || isNaN(novo)) {
+        alert("PIN inválido! Deve conter exatamente 4 números.");
+        return;
+      }
+      pinCorreto = novo;
+      localStorage.setItem('smart_painel_pin', novo);
+      alert("✅ Senha PIN alterada com sucesso! O novo PIN é: " + novo);
+      reiniciarTimerAutoBloqueio();
+    }
+
+    // Suporte a digitação física no computador
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('pinModal');
+      if (!modal || !modal.classList.contains('open')) return;
+
+      if (e.key >= '0' && e.key <= '9') {
+        digitarPin(e.key);
+      } else if (e.key === 'Backspace') {
+        apagarDigitoPin();
+      } else if (e.key === 'Enter') {
+        confirmarPin();
+      } else if (e.key === 'Escape') {
+        fecharModalPin();
+      }
+    });
+
+    // Acionamento dos níveis de brilho com trava de segurança
     function alternarBrilho(nivel) {
+      if (!verificarAcessoPermitido()) return;
+
       let novoNivel = (brilhoAtivo === nivel) ? 0 : nivel;
       brilhoAtivo = novoNivel;
       atualizarPainel();
@@ -803,8 +1250,10 @@
       }
     }
 
-    // Acionamento independente do FOOT LIGHT (Luz de Solo)
+    // Acionamento independente do FOOT LIGHT com trava de segurança
     function alternarFootLight() {
+      if (!verificarAcessoPermitido()) return;
+
       footLightAtivo = !footLightAtivo;
       atualizarPainel();
 
@@ -833,6 +1282,7 @@
     }
 
     function atualizarPainel() {
+      atualizarUiSeguranca();
       const badge = document.getElementById('heliBadge');
       if (badge) {
         badge.innerText = `🚁 HELI: ${heliId.toUpperCase()} ✏️`;
