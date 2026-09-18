@@ -193,6 +193,14 @@ void callbackMQTT(char* topic, byte* message, unsigned int length) {
 
 // Leitura contínua dos 4 botões físicos no painel com debounce
 void verificarBotoesFisicos() {
+  // Ignora ruído elétrico de inicialização nos primeiros 1.5 segundos após boot
+  if (millis() - tempoInicioBoot < 1500) {
+    for (int i = 0; i < NUM_BOTOES; i++) {
+      ultimoEstadoBotao[i] = digitalRead(PINOS_BOTAO[i]);
+    }
+    return;
+  }
+
   for (int i = 0; i < NUM_BOTOES; i++) {
     int leitura = digitalRead(PINOS_BOTAO[i]);
 
@@ -267,19 +275,24 @@ void verificarConexoes() {
   }
 }
 
+unsigned long tempoInicioBoot = 0;
+
 void setup() {
-  Serial.begin(115200);
-  delay(500);
-
-  // 1. Inicializa os pinos de relé como desligados (sem pulsar nem bater relé no boot)
+  // 1. PRIMEIRA INSTRUÇÃO ABSOLUTA: Configura os relés como DESLIGADOS imediatamente (sem delay, sem pulsar)
   for (int i = 0; i < NUM_RELES; i++) {
-    digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
     pinMode(PINOS_RELE[i], OUTPUT);
+    digitalWrite(PINOS_RELE[i], RELE_DESLIGADO);
   }
+  desligarTodosReles();
 
-  // 2. Inicializa os 4 Push Buttons com PULL-UP interno (Entradas)
+  // 2. Inicializa a comunicação Serial
+  Serial.begin(115200);
+  tempoInicioBoot = millis();
+
+  // 3. Inicializa os 4 Push Buttons com PULL-UP interno (Entradas)
   for (int i = 0; i < NUM_BOTOES; i++) {
     pinMode(PINOS_BOTAO[i], INPUT_PULLUP);
+    ultimoEstadoBotao[i] = digitalRead(PINOS_BOTAO[i]);
   }
 
   Serial.println("\n==============================================");
