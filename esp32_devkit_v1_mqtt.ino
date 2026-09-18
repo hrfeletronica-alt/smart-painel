@@ -91,6 +91,7 @@ bool footLightAtivo = false; // Estado do FOOT LIGHT
 bool ultimoEstadoBotao[NUM_BOTOES] = {HIGH, HIGH, HIGH, HIGH};
 unsigned long ultimoTempoDebounce[NUM_BOTOES] = {0, 0, 0, 0};
 const unsigned long DELAY_DEBOUNCE = 50; // 50 milissegundos para filtrar ruído mecânico
+unsigned long tempoInicioBoot = 0;
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -274,8 +275,6 @@ void verificarConexoes() {
     }
   }
 }
-
-unsigned long tempoInicioBoot = 0;
 
 void setup() {
   // 1. PRIMEIRA INSTRUÇÃO ABSOLUTA: Configura os relés como DESLIGADOS imediatamente (sem delay, sem pulsar)
