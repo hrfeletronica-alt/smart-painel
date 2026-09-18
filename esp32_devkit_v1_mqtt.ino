@@ -166,13 +166,20 @@ void callbackMQTT(char* topic, byte* message, unsigned int length) {
   for (unsigned int i = 0; i < length; i++) {
     msg += (char)message[i];
   }
+  msg.trim();
 
-  Serial.printf("[COMANDO NUVEM] Tópico: %s | Mensagem: %s\n", topic, msg.c_str());
+  Serial.println("\n----------------------------------------------");
+  Serial.printf("[COMANDO NUVEM RECEBIDO]\n  Tópico: %s\n  Mensagem: '%s'\n", topic, msg.c_str());
 
-  if (String(topic) == TOPICO_COMANDO) {
+  String topicoStr = String(topic);
+
+  // Aceita tanto o tópico padrão quanto qualquer ID ou tópico legado
+  if (topicoStr.endsWith("/balizamento/comando") || topicoStr == "smarthelipontos/balizamento/comando") {
     int nivel = msg.toInt();
+    Serial.printf("➔ Acionando Nível de Brilho: %d\n", nivel);
     aplicarNivelBrilho(nivel);
-  } else if (String(topic) == TOPICO_FOOTLIGHT_CMD) {
+  } else if (topicoStr.endsWith("/footlight/comando") || topicoStr == "smarthelipontos/footlight/comando") {
+    Serial.printf("➔ Acionando FOOT LIGHT com comando: %s\n", msg.c_str());
     if (msg == "1") {
       definirFootLight(true);
     } else if (msg == "0") {
@@ -181,6 +188,7 @@ void callbackMQTT(char* topic, byte* message, unsigned int length) {
       alternarFootLight();
     }
   }
+  Serial.println("----------------------------------------------");
 }
 
 // Leitura contínua dos 4 botões físicos no painel com debounce
@@ -247,9 +255,18 @@ void reconectarMQTT() {
 
     if (mqttClient.connect(clientId.c_str())) {
       Serial.println("CONECTADO A NUVEM!");
-      // Assina tópicos de comando de balizamento e foot light
+      // 1. Assina o tópico do heliponto configurado
       mqttClient.subscribe(TOPICO_COMANDO.c_str());
       mqttClient.subscribe(TOPICO_FOOTLIGHT_CMD.c_str());
+
+      // 2. Assina o tópico universal (+ coringa) e legado (garante recepção de qualquer tela/ID)
+      mqttClient.subscribe("smarthelipontos/+/balizamento/comando");
+      mqttClient.subscribe("smarthelipontos/+/footlight/comando");
+      mqttClient.subscribe("smarthelipontos/balizamento/comando");
+      mqttClient.subscribe("smarthelipontos/footlight/comando");
+
+      Serial.println("➔ Ouvindo comandos em: " + TOPICO_COMANDO);
+      Serial.println("➔ Ouvindo comandos universais em: smarthelipontos/+/balizamento/comando");
 
       // Notifica estados atuais ao reconectar
       char payload[4];
