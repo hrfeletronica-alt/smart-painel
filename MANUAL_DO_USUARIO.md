@@ -77,7 +77,7 @@ Caso o painel seja levado para outro heliponto ou a senha do roteador local tenh
 
 1. **Abra o Modo de Configuração:**
    - No painel físico, **mantenha pressionado o Botão 5 (Reset) por 3 segundos**.
-   - O ESP32 criará uma rede Wi-Fi própria chamada:
+   - O Módulo criará uma rede Wi-Fi própria chamada:
      📶 **`SmartHeliponto-Config`**
 
 2. **Conecte com o seu Celular:**

@@ -63,7 +63,7 @@ Sistema de automação profissional para controle e acionamento de balizamento a
    - **Nome da Rede (SSID):** `SmartHeliponto-Config`
 2. No celular, conecte-se a essa rede Wi-Fi. Uma janela de configuração abrirá automaticamente (ou acesse `http://192.168.4.1`).
 3. Selecione a rede Wi-Fi do cliente, digite a senha e defina o **ID do Heliponto** (ex: `torre-sul`, `padrao`).
-4. Clique em **Salvar**. O ESP32 armazena os dados na memória permanente (Flash NVS) e se conecta automaticamente.
+4. Clique em **Salvar**. O Módulo armazena os dados na memória permanente (Flash NVS) e se conecta automaticamente.
 
 
 ---

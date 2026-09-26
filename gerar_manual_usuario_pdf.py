@@ -184,7 +184,7 @@ data_wifi = [
     [
         Paragraph("<b>Passo 1</b>", table_cell_bold),
         Paragraph("Segure o <b>Botão 5 por 3s</b>", table_cell_center),
-        Paragraph("O ESP32 cria a rede Wi-Fi própria: <b>SmartHeliponto-Config</b>.", table_cell_left),
+        Paragraph("O Módulo cria a rede Wi-Fi própria: <b>SmartHeliponto-Config</b>.", table_cell_left),
     ],
     [
         Paragraph("<b>Passo 2</b>", table_cell_bold),
