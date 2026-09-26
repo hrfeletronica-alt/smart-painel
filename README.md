@@ -53,6 +53,18 @@ Sistema de automação profissional para controle e acionamento de balizamento a
 | **Botão 2** | **GPIO 33** | GND | Liga / Desliga Brilho 2 (70%) |
 | **Botão 3** | **GPIO 27** | GND | Liga / Desliga Brilho 3 (100%) |
 | **Botão 4** | **GPIO 14** | GND | Liga / Desliga FOOT LIGHT |
+| **Botão 5 (Config/Reset)** | **GPIO 23** | GND | **Segure por 3s:** Abre Portal Wi-Fi no Celular |
+
+---
+
+## 📲 Configuração de Wi-Fi em Campo (Portal Cativo no Celular)
+
+1. Ao instalar em um novo heliponto ou segurar o **Botão de Reset (GPIO 23)** por 3 segundos, o painel cria a rede Wi-Fi:
+   - **Nome da Rede (SSID):** `SmartHeliponto-Config`
+2. No celular, conecte-se a essa rede Wi-Fi. Uma janela de configuração abrirá automaticamente (ou acesse `http://192.168.4.1`).
+3. Selecione a rede Wi-Fi do cliente, digite a senha e defina o **ID do Heliponto** (ex: `torre-sul`, `padrao`).
+4. Clique em **Salvar**. O ESP32 armazena os dados na memória permanente (Flash NVS) e se conecta automaticamente.
+
 
 ---
 

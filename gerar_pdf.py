@@ -198,6 +198,12 @@ data_botoes = [
         Paragraph("GND (Terra Comum)", table_cell_center),
         Paragraph("Liga / Desliga <b>FOOT LIGHT</b> • Aciona Relé 4 (Independente)", table_cell_left),
     ],
+    [
+        Paragraph("<b>BOTÃO 5</b> (Reset Wi-Fi)", table_cell_bold),
+        Paragraph("<b>GPIO 23</b> (D23)", table_cell_bold),
+        Paragraph("GND (Terra Comum)", table_cell_center),
+        Paragraph("<b>Segure 3s:</b> Abre Portal de Configuração Wi-Fi no Celular (192.168.4.1)", table_cell_left),
+    ],
 ]
 
 t_btn = Table(data_botoes, colWidths=[105, 85, 110, 235])
@@ -266,12 +272,12 @@ elements.append(Spacer(1, 6))
 elements.append(Paragraph("4. LÓGICA DE FUNCIONAMENTO (FIRMWARE ESP32)", h2_style))
 regras_texto = """
 <b>• 1 Relé por Estágio de Balizamento:</b> Relé 1 (30%), Relé 2 (70%) e Relé 3 (100%) operam com intertravamento eletrônico automático (ao acionar um nível, o anterior é desligado instantaneamente).<br/>
-<b>• Foot Light 100% Independente:</b> O Relé 4 (GPIO 22 / Botão GPIO 14) pode ser ligado ou desligado a qualquer momento, mantendo o balizamento de pista ativo ou desligado.<br/>
-<b>• Boot Silencioso (Zero Disparos):</b> O microcontrolador inicializa os pinos de relé em nível DESLIGADO no primeiro ciclo de instrução do setup, prevenindo batimento ou pulso falso ao ligar/reiniciar.<br/>
-<b>• Controle Simultâneo Físico e Nuvem:</b> Opera em tempo real tanto pelos 4 botões físicos com debounce de ruído, quanto pela Web/Celular via MQTT Nuvem (broker.emqx.io) de qualquer rede 4G/5G.
+<b>• Foot Light 100% Independente:</b> O Relé 4 (GPIO 22 / Botão GPIO 14) pode ser acionado a qualquer momento de forma independente.<br/>
+<b>• Configuração Wi-Fi em Campo (Portal Cativo):</b> Segure o Botão 5 (GPIO 23) por 3s para abrir a rede <i>SmartHeliponto-Config</i>. No celular em <i>http://192.168.4.1</i> selecione a rede e defina o ID do cliente sem computador.<br/>
+<b>• Boot Silencioso e Operação Híbrida:</b> Relés desligados no boot (zero pulso). Sincronização via Nuvem MQTT (broker.emqx.io) e botoeiras operam mesmo sem internet.
 """
 elements.append(Paragraph(regras_texto, body_style))
-elements.append(Spacer(1, 6))
+elements.append(Spacer(1, 4))
 
 # Rodapé Técnico
 elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cbd5e1'), spaceAfter=4))
