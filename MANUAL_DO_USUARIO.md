@@ -24,10 +24,10 @@ O circuito de balizamento de perímetro conta com **intertravamento automático*
 
 | Estágio | Indicação Recomendada | Comportamento no Painel / App |
 |:---:|:---|:---|
-| **Brilho 1 (30%)** | Céu limpo, crepúsculo ou voos visuais noturnos padrão | Aciona o Relé 1 (30% de luminosidade) |
-| **Brilho 2 (70%)** | Neblina moderada, chuva leve ou maior contraste urbano | Aciona o Relé 2 (70% de luminosidade) |
-| **Brilho 3 (100%)** | Chuva forte, nevoeiro denso ou aproximações críticas | Aciona o Relé 3 (100% de intensidade) |
-| **Desligado (0%)** | Pista fora de operação | Todos os relés de balizamento abertos |
+| **Brilho 1 (30%)** | Céu limpo, crepúsculo ou voos visuais noturnos padrão | Balizamento ativo em 30% de luminosidade |
+| **Brilho 2 (70%)** | Neblina moderada, chuva leve ou maior contraste urbano | Balizamento ativo em 70% de luminosidade |
+| **Brilho 3 (100%)** | Chuva forte, nevoeiro denso ou aproximações críticas | Balizamento ativo em 100% de intensidade |
+| **Desligado (0%)** | Pista fora de operação | Balizamento totalmente desligado |
 
 * **Lógica Liga/Desliga (Toggle):** Se o Estágio 2 já estiver aceso e você pressionar novamente o botão do Estágio 2, o balizamento será **desligado**. Para trocar de intensidade (ex: de 1 para 3), basta clicar direto no nível desejado.
 
@@ -107,8 +107,8 @@ Caso o painel seja levado para outro heliponto ou a senha do roteador local tenh
 #### O que significa "Timeout de 3 minutos no Portal de Configuração"?
 Se alguém acionar o modo de configuração Wi-Fi por engano e ninguém conectar em até 3 minutos, o painel sai do modo de configuração e retorna para a operação normal das botoeiras.
 
-#### Os relés podem pulsar ou dar falso disparo ao ligar a energia?
-**Não.** O firmware conta com inicialização silenciosa ativa (*Hardware Safe Boot*), garantindo que todos os relés permaneçam 100% desligados até que haja uma ordem intencional do usuário.
+#### O sistema pode pulsar ou dar falso disparo ao ligar a energia?
+**Não.** O sistema conta com inicialização silenciosa ativa (*Hardware Safe Boot*), garantindo que todos os circuitos permaneçam 100% desligados até que haja uma ordem intencional do usuário.
 
 ---
 

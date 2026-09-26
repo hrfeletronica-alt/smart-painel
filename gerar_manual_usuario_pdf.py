@@ -124,22 +124,22 @@ data_botoes = [
     ],
     [
         Paragraph("<b>BOTÃO 1</b>", table_cell_bold),
-        Paragraph("<b>Balizamento 30%</b><br/>(Estágio 1 - Relé 1)", table_cell_center),
+        Paragraph("<b>Balizamento 30%</b><br/>(Estágio 1)", table_cell_center),
         Paragraph("Céu limpo, crepúsculo ou voos visuais noturnos normais. Aperte novamente para desligar.", table_cell_left),
     ],
     [
         Paragraph("<b>BOTÃO 2</b>", table_cell_bold),
-        Paragraph("<b>Balizamento 70%</b><br/>(Estágio 2 - Relé 2)", table_cell_center),
+        Paragraph("<b>Balizamento 70%</b><br/>(Estágio 2)", table_cell_center),
         Paragraph("Neblina moderada, chuva leve ou maior contraste com iluminação urbana.", table_cell_left),
     ],
     [
         Paragraph("<b>BOTÃO 3</b>", table_cell_bold),
-        Paragraph("<b>Balizamento 100%</b><br/>(Estágio 3 - Relé 3)", table_cell_center),
+        Paragraph("<b>Balizamento 100%</b><br/>(Estágio 3)", table_cell_center),
         Paragraph("Nevoeiro denso, chuva intensa ou aproximações críticas de baixa visibilidade.", table_cell_left),
     ],
     [
         Paragraph("<b>BOTÃO 4</b>", table_cell_bold),
-        Paragraph("<b>FOOT LIGHT</b><br/>(Solo - Relé 4)", table_cell_center),
+        Paragraph("<b>FOOT LIGHT</b><br/>(Iluminação de Solo)", table_cell_center),
         Paragraph("<b>100% Independente:</b> Iluminação de solo para embarque/desembarque. Liga/desliga livremente.", table_cell_left),
     ],
     [
@@ -222,7 +222,7 @@ texto_faq = """
 <b>• A internet caiu, o balizamento funciona?</b> Sim, 100% normal através dos botões físicos na porta do painel.<br/>
 <b>• Posso acender o Foot Light com o balizamento ligado?</b> Sim, o Foot Light opera em circuito totalmente isolado e independente.<br/>
 <b>• Intertravamento de Segurança:</b> O sistema nunca liga mais de um estágio de balizamento simultaneamente, protegendo lâmpadas e circuitos.<br/>
-<b>• Partida Silenciosa:</b> Ao ligar o disjuntor geral, os relés iniciam obrigatoriamente desligados, prevenindo disparos falsos.
+<b>• Partida Silenciosa:</b> Ao ligar o disjuntor geral, todos os circuitos iniciam obrigatoriamente desligados, prevenindo disparos falsos.
 """
 elements.append(Paragraph(texto_faq, body_style))
 elements.append(Spacer(1, 5))
