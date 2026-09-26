@@ -39,14 +39,14 @@ O circuito de balizamento de perímetro conta com **intertravamento automático*
 
 ## 3. Operação pelos Botões Físicos do Painel
 
-Na porta do painel elétrico estão localizados os 5 botões de comando:
+Na porta do painel elétrico estão localizados os botões de comando (e internamente o botão de reset no módulo):
 
 ```
- [ BOTÃO 1 ]   -> Liga / Alterna Balizamento Estágio 1 (30%)
- [ BOTÃO 2 ]   -> Liga / Alterna Balizamento Estágio 2 (70%)
- [ BOTÃO 3 ]   -> Liga / Alterna Balizamento Estágio 3 (100%)
- [ BOTÃO 4 ]   -> Liga / Desliga FOOT LIGHT (Solo)
- [ BOTÃO 5 ]   -> Reset de Wi-Fi (Segure 3 segundos para reconfigurar)
+ [ BOTÃO 1 ]           -> Liga / Alterna Balizamento Estágio 1 (30%)
+ [ BOTÃO 2 ]           -> Liga / Alterna Balizamento Estágio 2 (70%)
+ [ BOTÃO 3 ]           -> Liga / Alterna Balizamento Estágio 3 (100%)
+ [ BOTÃO 4 ]           -> Liga / Desliga FOOT LIGHT (Solo)
+ [ RESET NO MÓDULO ]   -> Reset de Wi-Fi (Segure 3 segundos para reconfigurar)
 ```
 
 - Cada clique em um botão físico reflete **instantaneamente** na tela do celular de quem estiver com o aplicativo aberto.
@@ -76,7 +76,7 @@ Você pode comandar o heliponto remotamente pelo celular ou tablet:
 Caso o painel seja levado para outro heliponto ou a senha do roteador local tenha sido alterada:
 
 1. **Abra o Modo de Configuração:**
-   - No painel físico, **mantenha pressionado o Botão 5 (Reset) por 3 segundos**.
+   - No painel/módulo, **mantenha pressionado o botão de Reset no Módulo por 3 segundos**.
    - O Módulo criará uma rede Wi-Fi própria chamada:
      📶 **`SmartHeliponto-Config`**
 

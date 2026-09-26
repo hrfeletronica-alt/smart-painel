@@ -199,7 +199,7 @@ data_botoes = [
         Paragraph("Liga / Desliga <b>FOOT LIGHT</b> • Aciona Relé 4 (Independente)", table_cell_left),
     ],
     [
-        Paragraph("<b>BOTÃO 5</b> (Reset Wi-Fi)", table_cell_bold),
+        Paragraph("<b>RESET NO MÓDULO</b>", table_cell_bold),
         Paragraph("<b>GPIO 23</b> (D23)", table_cell_bold),
         Paragraph("GND (Terra Comum)", table_cell_center),
         Paragraph("<b>Segure 3s:</b> Abre Portal de Configuração Wi-Fi no Celular (192.168.4.1)", table_cell_left),
@@ -273,7 +273,7 @@ elements.append(Paragraph("4. LÓGICA DE FUNCIONAMENTO (FIRMWARE ESP32)", h2_sty
 regras_texto = """
 <b>• 1 Relé por Estágio de Balizamento:</b> Relé 1 (30%), Relé 2 (70%) e Relé 3 (100%) operam com intertravamento eletrônico automático (ao acionar um nível, o anterior é desligado instantaneamente).<br/>
 <b>• Foot Light 100% Independente:</b> O Relé 4 (GPIO 22 / Botão GPIO 14) pode ser acionado a qualquer momento de forma independente.<br/>
-<b>• Configuração Wi-Fi em Campo (Portal Cativo):</b> Segure o Botão 5 (GPIO 23) por 3s para abrir a rede <i>SmartHeliponto-Config</i>. No celular em <i>http://192.168.4.1</i> selecione a rede e defina o ID do cliente sem computador.<br/>
+<b>• Configuração Wi-Fi em Campo (Portal Cativo):</b> Segure o Reset no Módulo (GPIO 23) por 3s para abrir a rede <i>SmartHeliponto-Config</i>. No celular em <i>http://192.168.4.1</i> selecione a rede e defina o ID do cliente sem computador.<br/>
 <b>• Boot Silencioso e Operação Híbrida:</b> Relés desligados no boot (zero pulso). Sincronização via Nuvem MQTT (broker.emqx.io) e botoeiras operam mesmo sem internet.
 """
 elements.append(Paragraph(regras_texto, body_style))

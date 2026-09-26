@@ -143,7 +143,7 @@ data_botoes = [
         Paragraph("<b>100% Independente:</b> Iluminação de solo para embarque/desembarque. Liga/desliga livremente.", table_cell_left),
     ],
     [
-        Paragraph("<b>BOTÃO 5 (RESET)</b>", table_cell_bold),
+        Paragraph("<b>RESET NO MÓDULO</b>", table_cell_bold),
         Paragraph("<b>Configuração Wi-Fi</b><br/>(Portal Cativo)", table_cell_center),
         Paragraph("<b>Segure por 3 segundos:</b> Abre a rede <i>SmartHeliponto-Config</i> para trocar o Wi-Fi pelo celular.", table_cell_left),
     ],
@@ -183,7 +183,7 @@ data_wifi = [
     ],
     [
         Paragraph("<b>Passo 1</b>", table_cell_bold),
-        Paragraph("Segure o <b>Botão 5 por 3s</b>", table_cell_center),
+        Paragraph("Segure o <b>Reset no Módulo por 3s</b>", table_cell_center),
         Paragraph("O Módulo cria a rede Wi-Fi própria: <b>SmartHeliponto-Config</b>.", table_cell_left),
     ],
     [
