@@ -71,9 +71,12 @@ Sistema de automação profissional para controle e acionamento de balizamento a
 ## 📂 Arquivos do Repositório
 
 - `index.html`: Interface Web moderna com suporte a QR Code para celular e conexão MQTT.
+- `MANUAL_DO_USUARIO.md`: Manual do usuário e guia de operação para o operador do heliponto.
+- `Manual_do_Usuario_Smart_Helipontos.pdf`: Manual do usuário em PDF diagramado e pronto para entrega ao cliente.
+- `Esquema_Ligacao_ESP32_DevKitV1_Reles.pdf`: Manual e esquema elétrico técnico para instaladores e montadores.
 - `esp32_devkit_v1_mqtt/esp32_devkit_v1_mqtt.ino`: Firmware oficial completo para ESP32 DevKit V1.
-- `Esquema_Ligacao_ESP32_DevKitV1_Reles.pdf`: Manual e esquema elétrico técnico pronto para impressão.
-- `gerar_pdf.py`: Script Python para geração automática do PDF técnico.
+- `gerar_manual_usuario_pdf.py`: Script Python para geração automática do Manual do Usuário em PDF.
+- `gerar_pdf.py`: Script Python para geração automática do Esquema Técnico em PDF.
 - `teste_hardware_reles.ino`: Script simples para validação em bancada dos 4 relés.
 
 ---
